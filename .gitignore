@@ -1,34 +1,22 @@
-# Notes de travail, gardées en local
 PLAN.md
 A FAIRE.md
 
-# Outillage assistant — repris du gitignore global, répété ici pour que le
-# dépôt se protège tout seul s'il est cloné ailleurs.
 CLAUDE.md
 CLAUDE.local.md
 .claude/
 .mcp.json
 
-# Dépendances : elles ne servent qu'au build, jamais au jeu publié.
 node_modules/
 npm-debug.log*
 
-# Sources géographiques téléchargées : ~50 Mo de GeoJSON brut que
-# `npm run donnees` va rechercher tout seul. Ce qui compte est le résultat,
-# pas la matière première.
 build/cache/
 
-# Pages de vérification jetables, créées à la racine le temps d'un contrôle
-# dans le navigateur puis supprimées. Le motif évite qu'une d'elles parte
-# dans un commit si le ménage est oublié.
 _verif-*.html
 _diag-*.html
 
-# Profil Firefox jetable, si un test en crée un dans le dépôt.
 ffprofil/
 ffp/
 
-# Système et éditeurs
 .DS_Store
 Thumbs.db
 *.swp
@@ -36,7 +24,3 @@ Thumbs.db
 .idea/
 .vscode/
 
-# NOTE — data/ n'est PAS ignoré, volontairement.
-# Ces fichiers sont générés par build/, mais GitHub Pages ne sait rien
-# construire : il sert des fichiers plats. Les cartes et les alias doivent
-# donc être versionnés, sinon le jeu en ligne n'a rien à afficher.
