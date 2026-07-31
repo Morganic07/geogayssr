@@ -1,12 +1,3 @@
-// Garde-fou du contrat entre base.css et les feuilles de thème.
-//
-// La promesse « les thèmes partagent exactement la même mise en page » ne tient
-// que si les feuilles de thème restent de simples jeux de variables. Une seule
-// propriété de mise en page glissée dans l'une d'elles suffit à la rompre, et la
-// divergence ne se voit qu'en comparant les deux rendus côte à côte — c'est
-// précisément comme cela que les deux feuilles complètes précédentes avaient
-// dérivé sans que personne ne s'en aperçoive.
-
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,9 +5,8 @@ import { fileURLToPath } from 'node:url';
 const RACINE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOSSIER = path.join(RACINE, 'css');
 
-// Variables posées ailleurs que dans :root et donc légitimement absentes.
 const POSEES_AILLEURS = new Set([
-  '--avancement',   // écrite par main.js sur #progression à chaque question
+  '--avancement',
 ]);
 
 const sansCommentaires = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -27,7 +17,6 @@ const constate = (ok, message) => {
   if (!ok) echecs.push(message);
 };
 
-// --------------------------------------------------------------- base.css
 
 const base = sansCommentaires(readFileSync(path.join(DOSSIER, 'base.css'), 'utf8'));
 
@@ -38,19 +27,14 @@ if (!blocRacine) {
 }
 const declareesBase = new Set([...blocRacine[1].matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
 
-console.log('=== base.css ===');
-constate(declareesBase.size > 0, `${declareesBase.size} variables déclarées dans :root`);
-
-// Toute variable consommée doit avoir une valeur de repli quelque part, sinon un
-// thème qui l'oublie produit une propriété invalide et un rendu cassé.
 const utilisees = new Set([...base.matchAll(/var\(\s*(--[a-z0-9-]+)/g)].map((m) => m[1]));
-const orphelines = [...utilisees].filter((v) => !declareesBase.has(v) && !POSEES_AILLEURS.has(v));
-constate(orphelines.length === 0,
-  orphelines.length === 0
-    ? 'toute variable utilisée a un repli dans :root'
-    : `variables sans repli : ${orphelines.join(', ')}`);
+const REQUIS = [...utilisees].filter((v) => !declareesBase.has(v) && !POSEES_AILLEURS.has(v)).sort();
 
-// --------------------------------------------------------- feuilles de thème
+console.log('=== base.css ===');
+constate(declareesBase.size > 0, `${declareesBase.size} constantes de mise en page dans :root`);
+
+constate(REQUIS.length > 0, `${REQUIS.length} variables à fournir par chaque thème`);
+
 
 const themes = readdirSync(DOSSIER).filter((f) => f.startsWith('theme-') && f.endsWith('.css'));
 constate(themes.length >= 2, `${themes.length} feuilles de thème trouvées`);
@@ -59,8 +43,6 @@ for (const fichier of themes) {
   console.log(`\n=== ${fichier} ===`);
   const src = sansCommentaires(readFileSync(path.join(DOSSIER, fichier), 'utf8'));
 
-  // Un thème ne contient qu'un bloc :root. Tout le reste — sélecteur, @media,
-  // @keyframes — est de la mise en page déguisée.
   const blocs = [...src.matchAll(/([^{}]*)\{([^{}]*)\}/g)];
   const intrus = blocs.map((b) => b[1].trim()).filter((s) => s !== ':root');
   constate(intrus.length === 0,
@@ -78,14 +60,24 @@ for (const fichier of themes) {
       ? 'que des variables, aucune propriété CSS'
       : `propriétés de mise en page : ${nonVariables.join(', ')}`);
 
-  // Une variable que base.css ne connaît pas ne sert à rien : soit elle a été
-  // renommée dans base et oubliée ici, soit elle est morte.
-  const declareesTheme = [...new Set([...src.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]))];
-  const inconnues = declareesTheme.filter((v) => !declareesBase.has(v));
-  constate(inconnues.length === 0,
-    inconnues.length === 0
-      ? `${declareesTheme.length} variables, toutes connues de base.css`
-      : `variables inconnues de base.css : ${inconnues.join(', ')}`);
+  const declareesTheme = new Set([...src.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+  const manquantes = REQUIS.filter((v) => !declareesTheme.has(v));
+  constate(manquantes.length === 0,
+    manquantes.length === 0
+      ? `les ${REQUIS.length} variables attendues sont toutes fournies`
+      : `variables manquantes, le rendu serait cassé : ${manquantes.join(', ')}`);
+
+  const redefinies = [...declareesTheme].filter((v) => declareesBase.has(v));
+  constate(redefinies.length === 0,
+    redefinies.length === 0
+      ? 'aucune constante de base.css redéfinie ici'
+      : `constantes de base.css écrasées, donc mortes dans base.css : ${redefinies.join(', ')}`);
+
+  const inutiles = [...declareesTheme].filter((v) => !REQUIS.includes(v) && !declareesBase.has(v));
+  constate(inutiles.length === 0,
+    inutiles.length === 0
+      ? 'aucune variable que base.css n\'utilise pas'
+      : `variables mortes, jamais lues par base.css : ${inutiles.join(', ')}`);
 }
 
 console.log(echecs.length === 0

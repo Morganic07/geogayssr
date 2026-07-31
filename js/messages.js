@@ -1,12 +1,3 @@
-// Messages de fin de partie.
-//
-// Pour modifier les textes, tout se passe dans le tableau PALIERS ci-dessous et
-// nulle part ailleurs. Chaque palier est un seuil en pourcentage et une liste de
-// textes ; un score déclenche le premier palier dont le seuil lui est inférieur ou
-// égal. Ajouter un texte = ajouter une chaîne à la liste ; ajouter un palier =
-// insérer un objet { seuil, textes } en gardant les seuils en ordre décroissant.
-// Le dernier palier doit rester à 0 pour couvrir les scores les plus bas.
-
 const PALIERS = [
   {
     seuil: 100,
@@ -58,8 +49,6 @@ const PALIERS = [
   }
 ];
 
-// Filet de sécurité : si PALIERS est mal édité (aucun palier atteint, liste de
-// textes vide), la fonction renvoie ceci plutôt qu'une valeur vide.
 const TEXTE_PAR_DEFAUT = 'Partie terminée.';
 
 function choisirAuHasard(textes) {
@@ -69,7 +58,6 @@ function choisirAuHasard(textes) {
 
 export function messagePourScore(pourcentage) {
   const valeur = Number(pourcentage);
-  // Un NaN ne satisfait aucune comparaison : on le ramène au plus bas palier.
   const borne = Number.isFinite(valeur) ? Math.min(100, Math.max(0, valeur)) : 0;
 
   for (const palier of PALIERS) {

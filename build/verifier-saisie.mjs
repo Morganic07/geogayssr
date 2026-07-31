@@ -1,10 +1,3 @@
-// Vérifie que le mode saisie est jouable : tout nom officiel et tout alias doit
-// résoudre vers sa propre entité, et aucune paire de pays voisins ne doit se
-// résoudre l'une pour l'autre.
-//
-// Lancer après toute modification de data/, de build/alias.js ou de js/saisie.js :
-//   node build/verifier-saisie.mjs
-
 import { readFileSync } from 'fs';
 import { normaliser, creerResolveur } from '../js/saisie.js';
 
@@ -14,8 +7,6 @@ const lire = (f) => JSON.parse(readFileSync(RACINE + f, 'utf8'));
 const alias = lire('data/alias.json');
 const PERIMETRES = ['onu', 'units', 'subunits'];
 
-// Ces paires existent réellement et se ressemblent : aucune ne doit jamais
-// se résoudre vers l'autre.
 const PIEGES = [
   ['Niger', 'Nigeria'], ['Guinée', 'Guinée-Bissau'], ['Guinée', 'Guinée équatoriale'],
   ['Corée du Nord', 'Corée du Sud'], ['Soudan', 'Soudan du Sud'],
@@ -35,7 +26,6 @@ for (const perimetre of PERIMETRES) {
 
   console.log(`\n=== ${perimetre} (${entites.length} entités) ===`);
 
-  // 1. Tout nom officiel doit se résoudre vers sa propre entité.
   let nomsKo = 0;
   for (const e of entites) {
     for (const champ of ['fr', 'en']) {
@@ -51,7 +41,6 @@ for (const perimetre of PERIMETRES) {
   if (nomsKo > 5) signaler(`… et ${nomsKo - 5} autres noms officiels non résolus`);
   if (nomsKo === 0) console.log('  ✓ les ' + entites.length * 2 + ' noms officiels (fr + en) résolvent');
 
-  // 2. Tout alias visant une entité présente doit se résoudre vers elle.
   let aliasKo = 0;
   for (const [id, formes] of Object.entries(alias)) {
     if (!parId.has(id)) continue;
@@ -66,10 +55,6 @@ for (const perimetre of PERIMETRES) {
   if (aliasKo > 5) signaler(`… et ${aliasKo - 5} autres alias non résolus`);
   if (aliasKo === 0) console.log('  ✓ tous les alias du périmètre résolvent');
 
-  // 3. Aucune paire piège ne doit se confondre — à condition que les deux pays
-  //    soient présents dans ce périmètre. « Guyane » n'existe pas dans le
-  //    périmètre ONU, où la France est une seule entité : la comparer à
-  //    « Guyana » n'aurait aucun sens.
   const nomsPresents = new Map(entites.map((e) => [normaliser(e.fr), e.id]));
   let piegesKo = 0;
   let piegesTestes = 0;
@@ -85,7 +70,6 @@ for (const perimetre of PERIMETRES) {
   }
   if (piegesKo === 0) console.log(`  ✓ ${piegesTestes} paire(s) piège testée(s), aucune confondue`);
 
-  // 4. Les fautes de frappe courantes doivent passer.
   const FAUTES = [
     ['allemagne', 'Allemagne'], ['Allemange', 'Allemagne'], ['ALLEMAGNE', 'Allemagne'],
     ['germany', 'Allemagne'], ['etats unis', null], ['USA', null],
@@ -102,7 +86,6 @@ for (const perimetre of PERIMETRES) {
   }
   if (fautesKo === 0) console.log('  ✓ les fautes de frappe courantes sont rattrapées');
 
-  // 5. Aucune forme normalisée ne doit désigner deux entités du même périmètre.
   const vues = new Map();
   let collisions = 0;
   for (const e of entites) {

@@ -1,22 +1,12 @@
-// Tolérance orthographique du mode saisie : normalisation des noms,
-// distance de Levenshtein et résolution d'une saisie vers une entité.
-
-// Caractères sans décomposition NFD utile : NFD ne les sépare pas en
-// lettre + diacritique, il faut donc les traduire à la main.
 const EQUIVALENCES = {
   'æ': 'ae', 'œ': 'oe', 'ø': 'o', 'å': 'a', 'ß': 'ss',
   'đ': 'd', 'ð': 'd', 'þ': 'th', 'ł': 'l', 'ı': 'i'
 };
 
 const APOSTROPHES = /[\u2018\u2019\u201b\u02bc\u02b9\u00b4`]/g;
-// Articles initiaux uniquement : « république » et « republic » restent, ils
-// distinguent trop de paires (Congo, Corée, Dominicaine...) pour être jetés.
 const ARTICLE_INITIAL = /^(?:l['\s]\s*|le\s+|la\s+|les\s+|the\s+)/;
 
-// Environ une faute tolérée par tranche de 5 caractères saisis.
 const CARACTERES_PAR_FAUTE = 5;
-// En dessous, aucune faute : « mali »/« malte », « inde », « irak »/« iran »
-// se confondraient sinon.
 const LONGUEUR_PLANCHER = 5;
 
 export function normaliser(texte) {
@@ -25,19 +15,12 @@ export function normaliser(texte) {
   sortie = sortie.replace(/[æœøåßđðþłı]/g, (c) => EQUIVALENCES[c]);
   sortie = sortie.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   sortie = sortie.replace(APOSTROPHES, "'");
-  // Tirets et ponctuation deviennent des espaces : « guinee-bissau » doit
-  // s'écrire aussi bien avec un tiret qu'avec une espace.
   sortie = sortie.replace(/[^a-z0-9']+/g, ' ').replace(/\s+/g, ' ').trim();
   sortie = sortie.replace(ARTICLE_INITIAL, '');
-  // L'apostrophe restante disparaît en dernier, sinon « l'inde » ne serait
-  // plus reconnaissable comme article.
   sortie = sortie.replace(/'/g, ' ').replace(/\s+/g, ' ').trim();
   return sortie;
 }
 
-// Levenshtein sur deux tampons de taille min(n, m) + 1.
-// seuilMax borne le calcul : au-delà, la fonction rend une valeur
-// strictement supérieure au seuil sans terminer le remplissage.
 export function distance(a, b, seuilMax = Infinity) {
   if (a === b) return 0;
   const longA = a.length;
@@ -86,8 +69,6 @@ export function creerResolveur(entites, alias = {}) {
   const formes = [];
   const connus = new Set();
 
-  // Une même forme portée par deux entités est marquée « partagée » et cesse
-  // d'être exploitable, en exact comme en approché.
   function ajouter(texte, id) {
     const forme = normaliser(texte);
     if (!forme) return;
@@ -107,10 +88,6 @@ export function creerResolveur(entites, alias = {}) {
     ajouter(entite.fr, entite.id);
     ajouter(entite.en, entite.id);
   }
-  // Le fichier d'alias couvre les trois découpages à la fois. Un alias visant
-  // une entité absente du jeu courant ne sert à rien, et surtout il marquerait
-  // « partagée » la forme d'une entité bien présente : « Inde » disparaîtrait
-  // du jeu ONU à cause de l'alias homonyme du découpage subunits.
   for (const id of Object.keys(alias || {})) {
     if (!connus.has(id)) continue;
     const liste = alias[id];
@@ -125,18 +102,12 @@ export function creerResolveur(entites, alias = {}) {
     const exacte = index.get(saisie);
     if (exacte) return exacte.partagee ? null : { id: exacte.id, score: 1 };
 
-    // Le seuil dépend de ce qui a été tapé, pas de la forme candidate :
-    // un candidat court ne peut donc pas capter une saisie courte mal
-    // orthographiée au détriment d'un candidat plus long.
     const seuil = seuilPour(saisie.length);
 
     let meilleurId = null;
     let meilleureDistance = Infinity;
     let meilleurScore = 0;
     let ambigu = false;
-    // Une forme partagée ne désigne personne, mais elle doit barrer la route au
-    // lieu d'être ignorée : sinon « coree du sod » quitte la Corée du Sud, dont
-    // la forme est partagée, pour atterrir sur la Corée du Nord.
     let distancePartagee = Infinity;
 
     if (seuil > 0) {
@@ -155,8 +126,6 @@ export function creerResolveur(entites, alias = {}) {
           meilleurScore = score;
           ambigu = false;
         } else if (ecart === meilleureDistance) {
-          // Deux entités distinctes aussi proches : on préfère ne rien rendre
-          // plutôt que de trancher au hasard entre Niger et Nigeria.
           if (entree.id !== meilleurId) ambigu = true;
           else if (score > meilleurScore) meilleurScore = score;
         }
@@ -170,12 +139,6 @@ export function creerResolveur(entites, alias = {}) {
     }
     if (distancePartagee !== Infinity) return null;
 
-    // Dernier recours : l'inversion de deux lettres voisines (« allemange »)
-    // coûte 2 en Levenshtein et passe donc sous le seuil des noms moyens.
-    // On ne la retient que si elle retombe sur une forme connue à l'identique.
-    // Sous le plancher, en revanche, aucune faute n'est tolérée : l'inversion
-    // ne doit pas rouvrir la porte que le seuil vient de fermer, sans quoi
-    // « inue », à une lettre de l'Inde, se résout en Niue à deux lettres.
     if (saisie.length < LONGUEUR_PLANCHER) return null;
     let idInverse = null;
     for (let i = 0; i + 1 < saisie.length; i += 1) {

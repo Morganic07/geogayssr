@@ -1,6 +1,3 @@
-// Câblage : écrans, chargement des données, et boucle de jeu reliant la carte,
-// le résolveur de saisie, le moteur de partie et la progression persistante.
-
 import { creerCarte } from './carte.js';
 import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
@@ -22,7 +19,6 @@ const CONTINENTS = {
   Antarctica: 'Antarctique',
 };
 
-// Délai d'affichage de la solution avant de passer à la question suivante.
 const PAUSE_JUSTE = 550;
 const PAUSE_FAUX = 1900;
 
@@ -31,13 +27,12 @@ let alias = null;
 
 let carte = null;
 let partie = null;
-let resolveur = null;
+const resolveurs = new Map();
 let perimetreCharge = null;
-let zoneActive = null;      // zone réellement appliquée à la carte de la partie en cours
-let enAttente = false;      // une réponse est en cours d'affichage
+let manche = null;
+let enAttente = false;
 let minuterie = 0;
 
-// ------------------------------------------------------------------ Écrans
 
 function afficherEcran(id) {
   for (const ecran of document.querySelectorAll('.ecran')) {
@@ -45,7 +40,12 @@ function afficherEcran(id) {
   }
 }
 
-// ------------------------------------------------------------------ Données
+function retournerAccueil() {
+  afficherEcran('ecran-accueil');
+  rafraichirMeilleurScore();
+  rafraichirBoutonErreurs();
+}
+
 
 async function chargerPerimetre(nom) {
   if (!cachesDonnees.has(nom)) {
@@ -53,7 +53,9 @@ async function chargerPerimetre(nom) {
     if (!reponse.ok) {
       throw new Error(`Carte introuvable (erreur ${reponse.status}). Recharge la page`);
     }
-    cachesDonnees.set(nom, await reponse.json());
+    const donnees = await reponse.json();
+    donnees.parId = new Map(donnees.entites.map((e) => [e.id, e]));
+    cachesDonnees.set(nom, donnees);
   }
   if (!alias) {
     const reponse = await fetch('data/alias.json');
@@ -65,10 +67,7 @@ async function chargerPerimetre(nom) {
   return cachesDonnees.get(nom);
 }
 
-// ------------------------------------------------------------------ Accueil
 
-// Nombre de pays demandé, ramené dans les bornes du champ. Une valeur vide ou
-// aberrante ne doit pas se propager jusqu'au moteur de partie.
 function nombreDemande() {
   const champ = $('#nombre-pays');
   const maxi = Number(champ.max) > 0 ? Number(champ.max) : Infinity;
@@ -84,13 +83,10 @@ function lireOptions() {
     perimetre: radio('perimetre'),
     politique: radio('politique'),
     zone: $('#choix-zone').value || null,
-    // null vaut « tous les pays » pour creerPartie.
     longueur: radio('longueur') === 'nombre' ? nombreDemande() : null,
   };
 }
 
-// Le maximum du champ suit le périmètre et la zone : proposer 300 pays quand
-// l'Océanie n'en compte que 24 fabriquerait une attente déçue.
 function rafraichirMaxPays() {
   const { perimetre, zone } = lireOptions();
   const donnees = cachesDonnees.get(perimetre);
@@ -112,8 +108,6 @@ function cleScore(o) {
   return `${o.mode}|${o.perimetre}|${o.zone || 'monde'}|${o.longueur || 'tout'}`;
 }
 
-// La liste des zones dépend du périmètre : l'Antarctique n'existe pas dans le
-// découpage ONU, et proposer une zone vide produirait une partie impossible.
 async function rafraichirZones() {
   const { perimetre } = lireOptions();
   const select = $('#choix-zone');
@@ -137,8 +131,6 @@ async function rafraichirZones() {
   select.value = presents.includes(choixActuel) ? choixActuel : '';
   rafraichirMaxPays();
   rafraichirMeilleurScore();
-  // Les erreurs se filtrent au périmètre courant : la liste ne peut être établie
-  // qu'une fois ses données chargées, donc pas avant ici.
   rafraichirBoutonErreurs();
 }
 
@@ -155,19 +147,12 @@ function rafraichirMeilleurScore() {
   }
 }
 
-// Les échecs sont mémorisés tous périmètres confondus : rater FXX en « Tous les
-// territoires » ne donne rien à réviser en « 197 de l'ONU », où cet identifiant
-// n'existe pas. Le bouton ne s'affiche donc que si le périmètre courant contient
-// vraiment quelque chose à revoir.
 function entitesRateesIci() {
   const donnees = cachesDonnees.get(lireOptions().perimetre);
   if (!donnees) return [];
-  const presents = new Set(donnees.entites.map((e) => e.id));
-  return entitesLesPlusRatees(1000).filter((id) => presents.has(id));
+  return entitesLesPlusRatees().filter((id) => donnees.parId.has(id));
 }
 
-// Une révision ne rejoue pas des dizaines de pays d'affilée : elle prend les plus
-// ratés. Le nombre est annoncé sur l'écran des erreurs, jamais tronqué en silence.
 const REVISION_MAX = 20;
 
 function entitesRevisablesIci() {
@@ -178,20 +163,13 @@ function rafraichirBoutonErreurs() {
   $('#bouton-voir-erreurs').hidden = entitesRateesIci().length === 0;
 }
 
-function afficherErreurs() {
-  const ids = entitesRateesIci();
-  const donnees = cachesDonnees.get(lireOptions().perimetre);
-  const { echecs } = chargerProgression();
-
-  const liste = $('#liste-erreurs');
+function remplirListeEntites(liste, ids, donnees, echecs = null) {
   liste.textContent = '';
   for (const id of ids) {
-    const entite = donnees ? donnees.entites.find((e) => e.id === id) : null;
+    const entite = donnees ? donnees.parId.get(id) : null;
     const item = document.createElement('li');
     item.textContent = entite ? entite.fr : id;
-    // Le nombre de fois où le pays a été raté n'apparaît qu'au-delà d'une fois :
-    // « ×1 » sur toute la liste n'apprend rien.
-    if (echecs[id] > 1) {
+    if (echecs && echecs[id] > 1) {
       const compteur = document.createElement('span');
       compteur.className = 'compteur';
       compteur.textContent = `×${echecs[id]}`;
@@ -199,6 +177,13 @@ function afficherErreurs() {
     }
     liste.append(item);
   }
+}
+
+function afficherErreurs() {
+  const ids = entitesRateesIci();
+  const donnees = cachesDonnees.get(lireOptions().perimetre);
+  const { echecs } = chargerProgression();
+  remplirListeEntites($('#liste-erreurs'), ids, donnees, echecs);
 
   const pluriel = ids.length > 1 ? 's' : '';
   $('#erreurs-resume').textContent = ids.length === 0
@@ -216,13 +201,10 @@ function signalerErreur(e) {
   cible.textContent = `${e.message}.`;
 }
 
-// ------------------------------------------------------------------ Partie
 
 async function demarrerPartie(options, entitesImposees = null) {
   const donnees = await chargerPerimetre(options.perimetre);
 
-  // La carte n'est reconstruite que si le périmètre change : redessiner
-  // ~360 formes à chaque partie serait perceptible sur mobile.
   if (perimetreCharge !== options.perimetre) {
     if (carte) carte.detruire();
     carte = creerCarte($('#carte'), donnees);
@@ -232,14 +214,8 @@ async function demarrerPartie(options, entitesImposees = null) {
   } else {
     carte.reinitialiserEtats();
   }
-  // Une révision porte sur des pays déjà ratés, où qu'ils soient : lui appliquer
-  // le filtre de zone rendrait une partie des questions impossibles à cliquer.
-  zoneActive = entitesImposees ? null : options.zone;
-  // filtrerContinent recadre déjà la vue, y compris sur le monde entier quand la
-  // zone est nulle : y ajouter reinitialiserVue annulerait ce cadrage.
-  carte.filtrerContinent(zoneActive);
-
-  resolveur = creerResolveur(donnees.entites, alias);
+  const zone = entitesImposees ? null : options.zone;
+  carte.filtrerContinent(zone);
 
   const entites = entitesImposees
     ? donnees.entites.filter((e) => entitesImposees.includes(e.id))
@@ -254,15 +230,19 @@ async function demarrerPartie(options, entitesImposees = null) {
     mode: options.mode,
     politique: options.politique,
     longueur: entitesImposees ? null : options.longueur,
-    zone: zoneActive,
+    zone,
   });
   partie.demarrer();
-  // Une révision ne joue ni la longueur ni la zone du formulaire : la ranger sous
-  // la clé d'une configuration normale y écraserait un score jamais obtenu.
-  partie.cle = entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options);
-  partie.estRevision = entitesImposees !== null;
+  manche = {
+    zone,
+    estRevision: entitesImposees !== null,
+    cle: entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options),
+  };
 
   const estSaisie = options.mode === 'saisie';
+  if (estSaisie && !resolveurs.has(options.perimetre)) {
+    resolveurs.set(options.perimetre, creerResolveur(donnees.entites, alias));
+  }
   $('#champ-reponse').hidden = !estSaisie;
   $('#bouton-valider').hidden = !estSaisie;
 
@@ -276,8 +256,6 @@ function poserQuestion() {
   if (!question) return terminerPartie();
 
   $('#progression').textContent = `${question.index} / ${question.total}`;
-  // Fraction d'avancement offerte à la feuille de style, qui en fait la jauge
-  // affichée sous le compteur.
   $('#progression').style.setProperty(
     '--avancement',
     question.total ? question.index / question.total : 0,
@@ -288,8 +266,6 @@ function poserQuestion() {
   if (partie.mode === 'clic') {
     $('#consigne').textContent = question.fr;
   } else {
-    // En mode saisie, c'est la carte qui pose la question : on met le pays en
-    // évidence et on recadre dessus, sinon un micro-État reste introuvable.
     $('#consigne').textContent = 'Quel est ce pays ?';
     carte.definirEtat(question.id, 'interroge');
     carte.zoomerSur(question.id);
@@ -307,6 +283,8 @@ function validerSaisie() {
   if (!partie || partie.mode !== 'saisie' || enAttente) return;
   const texte = $('#champ-reponse').value.trim();
   if (!texte) return;
+  const resolveur = resolveurs.get(perimetreCharge);
+  if (!resolveur) return;
   const trouve = resolveur.resoudre(texte);
   traiterReponse(trouve ? trouve.id : null);
 }
@@ -324,10 +302,6 @@ function traiterReponse(idPropose) {
     retour.textContent = 'Juste';
     retour.className = 'retour est-juste';
   } else {
-    // La bonne réponse est montrée — c'est un jeu pour apprendre — mais en rouge :
-    // elle marque une erreur, pas un point gagné. Le pays cliqué à tort n'est
-    // volontairement pas marqué lui aussi : deux rouges à l'écran, on ne saurait
-    // plus lequel est la réponse.
     carte.definirEtat(question.id, 'faux');
     if (partie.mode === 'clic') carte.zoomerSur(question.id);
     retour.textContent = idPropose ? `Non — ${question.fr}` : `Non reconnu — ${question.fr}`;
@@ -338,21 +312,16 @@ function traiterReponse(idPropose) {
   clearTimeout(minuterie);
   minuterie = setTimeout(() => {
     enAttente = false;
-    // Un pays raté puis remis dans la pile doit repartir en gris, sinon il
-    // s'affiche déjà en vert quand on le repose.
     if (partie.politique === 'rattrapage' && !resultat.correct) {
       carte.definirEtat(question.id, 'neutre');
     }
-    // Montrer la solution a zoomé sur elle : sans ce recadrage, toutes les
-    // questions suivantes seraient posées au zoom du dernier pays révélé.
     if (!resultat.correct && partie.mode === 'clic') {
-      carte.filtrerContinent(zoneActive);
+      carte.recadrerSurZone();
     }
     poserQuestion();
   }, resultat.correct ? PAUSE_JUSTE : PAUSE_FAUX);
 }
 
-// Un bloc du bilan : le chiffre au-dessus, ce qu'il compte en dessous.
 function blocBilan(valeur, etiquette, principal = false) {
   const bloc = document.createElement('span');
   bloc.className = principal ? 'bloc bloc-principal' : 'bloc';
@@ -370,10 +339,8 @@ function terminerPartie() {
   const s = partie.score();
   const pourcentage = s.total ? Math.round((s.premierCoup / s.total) * 100) : 0;
 
-  enregistrerScore(partie.cle, pourcentage);
+  enregistrerScore(manche.cle, pourcentage);
 
-  // Le pourcentage est le résultat, le détail vient après : en chiffres alignés
-  // plutôt qu'en phrase, il se lit d'un coup d'œil sur un écran de téléphone.
   const bilan = $('#score-final');
   bilan.textContent = '';
   bilan.append(
@@ -383,41 +350,24 @@ function terminerPartie() {
   if (s.rattrapage) bilan.append(blocBilan(String(s.rattrapage), 'au rattrapage'));
   $('#message-final').textContent = messagePourScore(pourcentage);
 
-  // Une révision réussie fait sortir le pays de la liste des erreurs. Raté à
-  // nouveau, l'échec vient d'être réenregistré et il y reste. Hors révision, la
-  // liste ne se vide pas toute seule : elle se purge là où on est venu pour ça.
-  if (partie.estRevision) {
+  if (manche.estRevision) {
     for (const id of partie.entitesTrouvees()) oublierEchec(id);
   }
 
   const ratees = partie.entitesRatees();
-  const liste = $('#liste-ratees');
-  liste.textContent = '';
-  const donnees = cachesDonnees.get(perimetreCharge);
-  for (const id of ratees) {
-    const entite = donnees.entites.find((e) => e.id === id);
-    const item = document.createElement('li');
-    item.textContent = entite ? entite.fr : id;
-    liste.append(item);
-  }
+  remplirListeEntites($('#liste-ratees'), ratees, cachesDonnees.get(perimetreCharge));
   $('#bloc-erreurs').hidden = ratees.length === 0;
 
   afficherEcran('ecran-fin');
   rafraichirBoutonErreurs();
 }
 
-// ------------------------------------------------------------------ Câblage
 
 let dernieresOptions = null;
 
-// Le premier périmètre chargé pèse près de 600 Ko : sans retour visuel, l'appui
-// sur « Jouer » reste sans effet apparent le temps du téléchargement.
 let chargementEnCours = false;
 
 async function lancer(options, entitesImposees = null) {
-  // Sans ce verrou, un second appui pendant le téléchargement lancerait une
-  // deuxième partie par-dessus la première, et le libellé du bouton resterait
-  // figé sur « Chargement… ».
   if (chargementEnCours) return;
   chargementEnCours = true;
 
@@ -447,16 +397,11 @@ $('#bouton-jouer').addEventListener('click', () => lancer(lireOptions()));
 
 $('#bouton-voir-erreurs').addEventListener('click', afficherErreurs);
 
-$('#bouton-retour-accueil').addEventListener('click', () => {
-  afficherEcran('ecran-accueil');
-  rafraichirMeilleurScore();
-  rafraichirBoutonErreurs();
-});
+$('#bouton-retour-accueil').addEventListener('click', retournerAccueil);
+$('#bouton-accueil').addEventListener('click', retournerAccueil);
 
 $('#bouton-reviser').addEventListener('click', () => {
   const ratees = entitesRevisablesIci();
-  // La liste a pu se vider entre l'affichage de l'écran et l'appui : changer de
-  // périmètre dans un autre onglet suffit.
   if (ratees.length === 0) {
     afficherErreurs();
     return;
@@ -473,22 +418,18 @@ $('#champ-reponse').addEventListener('keydown', (ev) => {
   }
 });
 
+function relancerDerniere() {
+  if (dernieresOptions) lancer(dernieresOptions.options, dernieresOptions.entitesImposees);
+}
+
 $('#bouton-reset').addEventListener('click', () => {
   clearTimeout(minuterie);
-  if (dernieresOptions) lancer(dernieresOptions.options, dernieresOptions.entitesImposees);
+  relancerDerniere();
 });
 
-$('#bouton-rejouer').addEventListener('click', () => {
-  if (dernieresOptions) lancer(dernieresOptions.options, dernieresOptions.entitesImposees);
-});
+$('#bouton-rejouer').addEventListener('click', relancerDerniere);
 
-$('#bouton-accueil').addEventListener('click', () => {
-  afficherEcran('ecran-accueil');
-  rafraichirMeilleurScore();
-  rafraichirBoutonErreurs();
-});
 
-// -------------------------------------------------- Paramètres en cours de jeu
 
 function ouvrirParametres() {
   $('#panneau-parametres').hidden = false;
@@ -498,8 +439,6 @@ function ouvrirParametres() {
 function fermerParametres() {
   if ($('#panneau-parametres').hidden) return;
   $('#panneau-parametres').hidden = true;
-  // Rendre le clavier au champ, sinon en mode saisie il faut le retoucher du
-  // doigt avant de pouvoir répondre.
   if (partie && partie.mode === 'saisie' && !enAttente) $('#champ-reponse').focus();
   else $('#bouton-parametres').focus();
 }
@@ -507,7 +446,6 @@ function fermerParametres() {
 $('#bouton-parametres').addEventListener('click', ouvrirParametres);
 $('#bouton-reprendre').addEventListener('click', fermerParametres);
 
-// Un clic sur le fond du panneau, en dehors de la boîte, vaut « Reprendre ».
 $('#panneau-parametres').addEventListener('click', (ev) => {
   if (ev.target === $('#panneau-parametres')) fermerParametres();
 });
@@ -520,19 +458,10 @@ $('#bouton-quitter').addEventListener('click', () => {
   clearTimeout(minuterie);
   enAttente = false;
   fermerParametres();
-  afficherEcran('ecran-accueil');
-  rafraichirMeilleurScore();
-  rafraichirBoutonErreurs();
+  retournerAccueil();
 });
 
-// ------------------------------------------------------------------ Thème
-// Le thème n'entre pas dans la clé de score : changer d'apparence ne doit pas
-// repartir d'un tableau vierge.
 
-// Le thème se choisit à deux endroits : dans les options de l'accueil et dans le
-// panneau ouvert en cours de partie. Deux groupes de boutons radio distincts —
-// un même `name` n'autorise qu'un seul coché dans toute la page, les deux
-// listes se décocheraient l'une l'autre — donc une synchronisation explicite.
 const CHAMPS_THEME = 'input[name="theme"], input[name="theme-jeu"]';
 
 function synchroniserTheme(nom) {
@@ -542,15 +471,12 @@ function synchroniserTheme(nom) {
 }
 
 function appliquerTheme(nom) {
-  const themes = window.THEMES || {};
-  const feuille = document.getElementById('feuille-theme');
-  if (!themes[nom] || !feuille) return;
-  feuille.href = themes[nom];
+  if (typeof window.appliquerFeuilleTheme !== 'function') return;
+  if (!window.appliquerFeuilleTheme(nom)) return;
   synchroniserTheme(nom);
   try {
     localStorage.setItem('geogayssr.theme', nom);
   } catch (e) {
-    // Stockage indisponible : le thème tient pour la session, sans être mémorisé.
   }
 }
 
@@ -573,8 +499,6 @@ for (const nom of ['mode', 'longueur', 'politique']) {
   }
 }
 
-// Sur « change » et non « input » : borner pendant la frappe rendrait impossible
-// de taper 23 en passant par 2, qui serait aussitôt réécrit.
 $('#nombre-pays').addEventListener('change', () => {
   $('#nombre-pays').value = String(nombreDemande());
   rafraichirMeilleurScore();

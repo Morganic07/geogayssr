@@ -1,27 +1,12 @@
-// Génère data/alias.json : toutes les formes acceptées en mode saisie, pour
-// chaque entité des trois périmètres.
-//
-//   node build/alias.mjs
-//
-// Échoue si deux entités d'un même périmètre partagent une forme : un alias
-// ambigu rendrait les deux pays impossibles à nommer.
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// La normalisation est importée du module de jeu, jamais recopiée : une copie
-// finirait par diverger en silence, et les formes écrites ici cesseraient de
-// correspondre à ce que le joueur tape.
-import { normaliser } from '../js/saisie.js';
+import { normaliser, distance } from '../js/saisie.js';
 
 const DOSSIER_DONNEES = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const PERIMETRES = ['onu', 'units', 'subunits'];
 
-// Variantes usuelles, historiques et abréviations, écrites à la main.
-// Les noms français et anglais des données sont ajoutés automatiquement : cette
-// table ne contient que ce qui s'y ajoute.
 const ALIAS = {
-  // --- États du périmètre ONU ---
   ZAF: ['république sud-africaine'],
   DEU: ['RFA', 'république fédérale d\'Allemagne', 'Deutschland'],
   AND: ['principauté d\'Andorre'],
@@ -38,8 +23,6 @@ const ALIAS = {
   KHM: ['Kampuchéa'],
   CPV: ['Cabo Verde', 'îles du Cap-Vert'],
   VAT: ['Vatican', 'Saint-Siège', 'État de la cité du Vatican'],
-  // Corées : uniquement des formes qui portent le nord ou le sud. Le mot « Corée »
-  // seul n'est donné à personne, il désignerait aussi bien l'une que l'autre.
   PRK: ['Corée-du-Nord', 'Corée nord'],
   KOR: ['Corée-du-Sud', 'Corée sud', 'république de Corée du Sud'],
   CIV: ['Ivory Coast'],
@@ -67,7 +50,6 @@ const ALIAS = {
   MUS: ['île Maurice'],
   NAM: ['Sud-Ouest africain'],
   PLW: ['Palau', 'Belau'],
-  // L'identifiant de la Palestine est PSX dans les données, pas PSE.
   PSX: ['territoires palestiniens', 'État de Palestine'],
   PN1: ['Papouasie', 'PNG'],
   NLD: ['Hollande', 'Provinces-Unies'],
@@ -95,7 +77,6 @@ const ALIAS = {
   ZMB: ['Rhodésie du Nord'],
   ZWE: ['Rhodésie'],
 
-  // --- Unités et sous-unités ---
   PAZ: ['Azores'],
   ALD: ['îles Åland'],
   ATA: ['continent antarctique'],
@@ -145,9 +126,6 @@ const ALIAS = {
   NCL: ['Kanaky'],
   PNX: ['Papouasie', 'PNG'],
   WLS: ['Galles'],
-  // Les jumeaux d'un même pays d'un découpage à l'autre doivent porter les mêmes
-  // variantes que leur homologue ONU, sinon une saisie acceptée en mode 1 est
-  // refusée en mode 2 pour le même pays.
   NLX: ['Hollande', 'Provinces-Unies'],
   INX: ['Bharat'],
   JPX: ['Nippon'],
@@ -163,9 +141,6 @@ const ALIAS = {
   BIS: ['Republika Srpska'],
   SAH: ['Western Sahara', 'RASD'],
   BLM: ['Saint-Barth'],
-  // Les deux moitiés de l'île sont homonymes dans les données. En français,
-  // « Saint-Martin » désigne la collectivité française : elle garde la forme nue,
-  // la partie néerlandaise ne répond qu'à des formes qui la nomment.
   MAF: ['partie française de Saint-Martin', 'Saint-Martin français'],
   SXM: ['Sint Maarten', 'Saint-Martin néerlandais', 'partie néerlandaise de Saint-Martin'],
   NSV: ['Spitzberg', 'Spitsberg'],
@@ -173,11 +148,6 @@ const ALIAS = {
   ATF: ['TAAF', 'Terres australes françaises', 'Kerguelen'],
   IOT: ['BIOT'],
   SRV: ['Vojvodine'],
-  // Le nom français porté par les données est faux : PGA est l'archipel des
-  // Spratleys (souverain « Spratly Islands », au large des Philippines), pas Wake.
-  // Le nom anglais des données étant exclu lui aussi, la forme nue et la forme
-  // anglaise doivent être rendues à la main : sans elles « Spratly » est refusé
-  // alors que « Spratleys » passe.
   PGA: ['îles Spratly', 'Spratly', 'Spratleys', 'îles Spratleys', 'Spratly Islands'],
   WQI: ['île Wake', 'atoll de Wake'],
   WLF: ['Wallis'],
@@ -189,8 +159,6 @@ const ALIAS = {
   GNK: ['Fernando Poo'],
   JPV: ['îles Volcano', 'Iwo Jima'],
   KOX: ['Corée-du-Sud', 'Corée sud', 'république de Corée du Sud'],
-  // KXI regroupe les îles sud-coréennes, homonymes de la Corée du Sud continentale
-  // dans les données : la forme nue revient au continent, bien plus grand.
   KXI: ['îles de la Corée du Sud', 'îles sud-coréennes'],
   FXC: ['Corsica'],
   ECG: ['îles Galápagos'],
@@ -224,34 +192,22 @@ const ALIAS = {
   RUC: ['Crimée'],
   CHI: ['Chine'],
   KOD: ['Dokdo', 'Takeshima'],
-  // Les données coupent la Russie en deux moitiés portant le même nom. Aucune des
-  // deux n'est « la Russie » plus que l'autre : la forme nue n'est donnée ni à
-  // l'une ni à l'autre, chacune ne répond qu'à sa moitié.
   RUA: ['Russie asiatique', 'Russie d\'Asie', 'Sibérie'],
   RUE: ['Russie européenne', 'Russie d\'Europe'],
   GGS: ['Sark'],
-  // Même mécanique : le nom français porté par FSA est faux, c'est la subdivision
-  // principale des Terres australes, autour de Kerguelen, et non les Seychelles.
   FSA: ['Terres australes et antarctiques françaises', 'TAAF', 'Kerguelen', 'îles Kerguelen'],
   TLX: ['Timor-Leste'],
 };
 
-// Formes issues des noms des données qu'il faut retirer, parce qu'elles nomment
-// une autre entité du même périmètre. Chaque retrait est arbitré dans ALIAS.
 const EXCLUSIONS = {
-  SXM: ['Saint-Martin'],                     // revient à MAF
-  KXI: ['Corée du Sud', 'South Korea'],      // revient à KOX
-  RUA: ['Russie', 'Russia'],                 // ne revient à personne
+  SXM: ['Saint-Martin'],
+  KXI: ['Corée du Sud', 'South Korea'],
+  RUA: ['Russie', 'Russia'],
   RUE: ['Russie', 'Russia'],
-  PGA: ['Wake', 'Wake Island'],              // revient à WQI, PGA étant les Spratleys
-  FSA: ['Seychelles'],                       // revient à SYC, FSA étant les Terres australes
+  PGA: ['Wake', 'Wake Island'],
+  FSA: ['Seychelles'],
 };
 
-// Formes qui ne doivent appartenir à personne : elles désignent au moins deux
-// entités concurrentes et aucune ne les porte comme nom officiel.
-// « guinée » et « soudan » n'y figurent pas : ce sont les noms français exacts et
-// exclusifs de GIN et SDN. Les leur retirer rendrait ces deux pays impossibles à
-// nommer. L'interdiction porte sur les alias inventés, pas sur les noms.
 const FORMES_INTERDITES = ['corée', 'congo'];
 
 function lireDonnees() {
@@ -281,26 +237,10 @@ function construireFormes(entite) {
   return formes;
 }
 
-function distance(a, b) {
-  if (a === b) return 0;
-  let precedente = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 0; i < a.length; i += 1) {
-    const courante = [i + 1];
-    for (let j = 0; j < b.length; j += 1) {
-      const cout = a[i] === b[j] ? 0 : 1;
-      courante[j + 1] = Math.min(courante[j] + 1, precedente[j + 1] + 1, precedente[j] + cout);
-    }
-    precedente = courante;
-  }
-  return precedente[b.length];
-}
-
 function main() {
   const { entites, parPerimetre } = lireDonnees();
   const erreurs = [];
 
-  // Une clé inconnue dans les tables écrites à la main est une faute de frappe :
-  // silencieusement ignorée, elle priverait une entité de ses variantes.
   for (const [nom, table] of [['ALIAS', ALIAS], ['EXCLUSIONS', EXCLUSIONS]]) {
     for (const id of Object.keys(table)) {
       if (!entites.has(id)) erreurs.push(`${nom} : identifiant inconnu « ${id} »`);
@@ -321,9 +261,6 @@ function main() {
     }
   }
 
-  // Le conflit se juge périmètre par périmètre : deux entités qui ne sont jamais
-  // proposées ensemble peuvent porter la même forme sans ambiguïté possible
-  // (FRA dans le périmètre ONU et FXX dans les autres sont toutes deux « france »).
   const voisinages = [];
   for (const perimetre of PERIMETRES) {
     const ids = parPerimetre.get(perimetre);
@@ -353,10 +290,6 @@ function main() {
   const total = Object.values(sortie).reduce((somme, formes) => somme + formes.length, 0);
   console.log(`data/alias.json écrit : ${Object.keys(sortie).length} entités, ${total} formes.`);
 
-  // Avertit sans bloquer : deux entités différentes du même périmètre séparées par
-  // une seule lettre sont un piège pour la correspondance approchée du résolveur.
-  // Les paires internes à une même entité (« albanie » / « albania ») sont sans
-  // danger et ne sont pas signalées.
   const proches = new Set();
   for (const { parForme } of voisinages) {
     const formes = [...parForme.keys()];

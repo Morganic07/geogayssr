@@ -1,10 +1,3 @@
-// Vérifie la progression persistante, et surtout la sortie de la liste des pays
-// ratés après une révision réussie.
-//   node build/verifier-stockage.mjs
-//
-// Sans localStorage, le module tient son état en mémoire : c'est exactement la
-// logique qu'on veut éprouver ici, la sérialisation n'entre pas en jeu.
-
 import {
   chargerProgression, enregistrerEchec, oublierEchec, entitesLesPlusRatees,
   enregistrerScore, effacerTout,

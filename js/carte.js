@@ -1,36 +1,20 @@
-// Rendu de la carte, zoom/pan par viewBox et détection des clics.
-
 const NS_SVG = 'http://www.w3.org/2000/svg';
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 40;
 
-// Rayon d'une pastille, exprimé dans les unités du plan à zoom 1 : à l'écran le
-// diamètre apparent reste donc de 22 unités quel que soit le recadrage.
 const RAYON_PASTILLE = 11;
-// Étendue apparente (mêmes unités) au-delà de laquelle une entité se voit toute
-// seule : sa pastille commence alors à s'effacer, et disparaît au double.
 const SEUIL_VISIBLE = 30;
 
-// Rayon de saisie d'une pastille, en pixels CSS : donne une cible de 44 px de
-// diamètre, très au-dessus des quelques pixels du disque réellement dessiné.
 const TOLERANCE_TOUCHER = 22;
 const DEPLACEMENT_CLIC = 8;
 const DUREE_CLIC = 500;
 
 const DUREE_ANIMATION = 400;
 const MARGE_CADRAGE = 1.4;
-// Cadrage d'une entité sans étendue (Vatican) : sans ce plancher le viewBox
-// serait de dimension nulle.
 const ETENDUE_MINI = 60;
 
-// Cadrage d'un pays interrogé : volontairement plus large que le cadrage d'une
-// zone. Serré sur ses frontières, un pays n'est qu'une forme hors contexte ;
-// c'est le voisinage qui permet de le reconnaître. Le pays reste au centre, on
-// en montre seulement davantage autour.
 const MARGE_QUESTION = 2.6;
-// Un sixième de la largeur du monde au maximum : au-delà, même un micro-État
-// serait cadré sur une portion de côte où plus rien n'est identifiable.
 const ZOOM_QUESTION_MAX = 6;
 
 const CLASSES_ETAT = { interroge: 'est-interroge', juste: 'est-juste', faux: 'est-faux' };
@@ -50,18 +34,13 @@ export function creerCarte(elementSvg, donnees) {
   const entites = donnees.entites || [];
 
   const fiches = new Map();
-  // Pastilles triées par zoom de disparition croissant : le fondu ne concerne
-  // alors qu'une tranche contiguë du tableau à chaque image.
   const pastilles = [];
   const etatsPoses = new Map();
 
   let groupeContours = null;
   let groupePastilles = null;
 
-  // Rectangle CSS du SVG, mesuré hors de la boucle de rendu.
   const cadre = { gauche: 0, haut: 0, largeur: 1, hauteur: 1 };
-  // Emprise correspondant au zoom 1, plan étiré au ratio du viewport pour que
-  // le viewBox remplisse exactement l'élément (conversion écran/plan exacte).
   const base = { x: 0, y: 0, l: largeurPlan, h: hauteurPlan };
   const vue = { x: 0, y: 0, l: largeurPlan, h: hauteurPlan };
 
@@ -71,7 +50,6 @@ export function creerCarte(elementSvg, donnees) {
 
   let imageMaj = 0;
   let imageAnim = 0;
-  // Vrai tant que le rectangle CSS a déjà été relu dans l'image courante.
   let mesureAJour = false;
   let rappelClic = null;
   let detruit = false;
@@ -82,7 +60,6 @@ export function creerCarte(elementSvg, donnees) {
   let candidatClic = null;
   let observateur = null;
 
-  // --- Mesure et bornes ----------------------------------------------------
 
   function recalculerBase() {
     const centreX = vue.x + vue.l / 2;
@@ -124,8 +101,6 @@ export function creerCarte(elementSvg, donnees) {
     }
   }
 
-  // La vue ne sort jamais du plan ; si elle est plus grande que lui sur un axe
-  // (bande de letterbox), elle s'y centre.
   function borner(v) {
     if (v.l >= largeurPlan) v.x = (largeurPlan - v.l) / 2;
     else v.x = limiter(v.x, 0, largeurPlan - v.l);
@@ -140,7 +115,6 @@ export function creerCarte(elementSvg, donnees) {
     };
   }
 
-  // --- Application de la vue ----------------------------------------------
 
   function planifierMaj() {
     if (imageMaj || detruit) return;
@@ -154,7 +128,6 @@ export function creerCarte(elementSvg, donnees) {
     mesureAJour = false;
     elementSvg.setAttribute('viewBox', vue.x + ' ' + vue.y + ' ' + vue.l + ' ' + vue.h);
     const zoom = base.l / vue.l;
-    // Le glissement ne change pas le zoom : les pastilles sont alors intactes.
     if (zoom !== zoomApplique) {
       zoomApplique = zoom;
       majPastilles(zoom);
@@ -191,7 +164,6 @@ export function creerCarte(elementSvg, donnees) {
     const debut = indiceParZoom(zoom / 2, false);
     const fin = indiceParZoom(zoom, true);
 
-    // Sorties de bande depuis l'image précédente : états terminaux.
     for (let i = Math.min(debut, bandeDebut); i < debut; i++) poserOpacite(pastilles[i], 0);
     for (let i = fin; i < Math.max(fin, bandeFin); i++) poserOpacite(pastilles[i], 1);
     for (let i = debut; i < fin; i++) {
@@ -201,7 +173,6 @@ export function creerCarte(elementSvg, donnees) {
     bandeDebut = debut;
     bandeFin = fin;
 
-    // Les pastilles totalement effacées n'ont pas besoin d'un rayon à jour.
     for (let i = debut; i < pastilles.length; i++) {
       pastilles[i].pastille.setAttribute('r', rayon);
     }
@@ -227,8 +198,6 @@ export function creerCarte(elementSvg, donnees) {
     const pas = (maintenant) => {
       const p = limiter((maintenant - debut) / DUREE_ANIMATION, 0, 1);
       const e = adoucir(p);
-      // Interpolation géométrique de l'échelle : un zoom linéaire paraîtrait
-      // brutal au début et interminable à la fin.
       vue.l = depart.l * Math.pow(rapport, e);
       vue.h = vue.l * base.h / base.l;
       vue.x = cxDepart + (cxCible - cxDepart) * e - vue.l / 2;
@@ -260,7 +229,6 @@ export function creerCarte(elementSvg, donnees) {
     }
   }
 
-  // --- Construction du DOM -------------------------------------------------
 
   function dessiner() {
     if (groupeContours) groupeContours.remove();
@@ -273,7 +241,6 @@ export function creerCarte(elementSvg, donnees) {
 
     elementSvg.setAttribute('viewBox', '0 0 ' + largeurPlan + ' ' + hauteurPlan);
     elementSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    // Sans cela le navigateur préempte les gestes et le pincement n'arrive jamais.
     elementSvg.style.touchAction = 'none';
     elementSvg.style.userSelect = 'none';
     elementSvg.style.webkitUserSelect = 'none';
@@ -282,8 +249,6 @@ export function creerCarte(elementSvg, donnees) {
     groupeContours.setAttribute('class', 'carte-contours');
     groupePastilles = document.createElementNS(NS_SVG, 'g');
     groupePastilles.setAttribute('class', 'carte-pastilles');
-    // Le pointage des pastilles se fait par proximité en JS, pas par le DOM :
-    // une pastille effacée ne doit jamais intercepter le doigt.
     groupePastilles.style.pointerEvents = 'none';
 
     for (const entite of entites) {
@@ -320,8 +285,6 @@ export function creerCarte(elementSvg, donnees) {
         groupePastilles.appendChild(cercle);
 
         const etendue = Math.max(zone[2] - zone[0], zone[3] - zone[1]);
-        // Une entité au tracé vide n'existe que par sa pastille : elle ne
-        // s'efface jamais, quel que soit le zoom.
         if (entite.d && etendue > 0) fiche.zoomDisparition = SEUIL_VISIBLE / etendue;
         pastilles.push(fiche);
       }
@@ -329,8 +292,6 @@ export function creerCarte(elementSvg, donnees) {
       fiches.set(entite.id, fiche);
     }
 
-    // Comparateur explicite : une soustraction donnerait NaN entre deux
-    // entités de zoom de disparition infini, et l'ordre deviendrait douteux.
     pastilles.sort((a, b) => {
       if (a.zoomDisparition === b.zoomDisparition) return 0;
       return a.zoomDisparition < b.zoomDisparition ? -1 : 1;
@@ -342,21 +303,15 @@ export function creerCarte(elementSvg, donnees) {
     elementSvg.appendChild(fragment);
 
     mesurer();
-    // Le redessin repart du monde entier : sans cette remise à plat, le cadrage
-    // de la partie précédente survivrait, et le viewBox posé plus haut serait
-    // aussitôt remplacé par une vue périmée.
     arreterAnimation();
     vue.x = base.x;
     vue.y = base.y;
     vue.l = base.l;
     vue.h = base.h;
     zoomApplique = -1;
-    // Application immédiate plutôt que différée : une image au mauvais cadrage
-    // suffit à faire clignoter la carte à chaque nouvelle partie.
     appliquerVue();
   }
 
-  // --- États ---------------------------------------------------------------
 
   function appliquerClasse(fiche, classe) {
     for (const el of [fiche.chemin, fiche.pastille]) {
@@ -383,7 +338,6 @@ export function creerCarte(elementSvg, donnees) {
     etatsPoses.clear();
   }
 
-  // --- Filtrage ------------------------------------------------------------
 
   function poserActivite(fiche, actif) {
     fiche.actif = actif;
@@ -397,10 +351,18 @@ export function creerCarte(elementSvg, donnees) {
     }
   }
 
+  let cadreZone = null;
+
+  function recadrerSurZone() {
+    if (cadreZone === null) reinitialiserVue();
+    else cadrerSur(cadreZone[0], cadreZone[1], cadreZone[2], cadreZone[3], true);
+  }
+
   function filtrerContinent(nom) {
+    const tout = nom === null || nom === undefined;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const fiche of fiches.values()) {
-      const actif = nom === null || nom === undefined || fiche.entite.continent === nom;
+      const actif = tout || fiche.entite.continent === nom;
       poserActivite(fiche, actif);
       if (!actif) continue;
       const z = fiche.entite.zone;
@@ -410,11 +372,10 @@ export function creerCarte(elementSvg, donnees) {
       if (z[2] > x1) x1 = z[2];
       if (z[3] > y1) y1 = z[3];
     }
-    if (nom === null || nom === undefined || x0 > x1) reinitialiserVue();
-    else cadrerSur(x0, y0, x1, y1, true);
+    cadreZone = tout || x0 > x1 ? null : [x0, y0, x1, y1];
+    recadrerSurZone();
   }
 
-  // --- Vue publique --------------------------------------------------------
 
   function zoomerSur(id) {
     const fiche = fiches.get(id);
@@ -427,7 +388,6 @@ export function creerCarte(elementSvg, donnees) {
     animerVers({ x: base.x, y: base.y, l: base.l, h: base.h });
   }
 
-  // --- Gestes --------------------------------------------------------------
 
   function zoomerAutourDe(clientX, clientY, facteur) {
     const point = versPlan(clientX, clientY);
@@ -443,8 +403,6 @@ export function creerCarte(elementSvg, donnees) {
   function surMolette(ev) {
     ev.preventDefault();
     arreterAnimation();
-    // Un pavé tactile émet des dizaines d'événements par image : relire le
-    // rectangle CSS à chacun forcerait autant de calculs de mise en page.
     if (!mesureAJour) mesurer();
     let delta = ev.deltaY;
     if (ev.deltaMode === 1) delta *= 16;
@@ -460,8 +418,6 @@ export function creerCarte(elementSvg, donnees) {
     pincement = {
       ids: [deux[0].id, deux[1].id],
       ancre: versPlan(milieuX, milieuY),
-      // Écart entre les doigts converti en unités du plan : l'échelle courante
-      // s'en déduit à chaque image, et les points ancrés restent sous les doigts.
       ecartPlan: ecart / (cadre.largeur / vue.l)
     };
   }
@@ -492,13 +448,10 @@ export function creerCarte(elementSvg, donnees) {
     try {
       elementSvg.setPointerCapture(ev.pointerId);
     } catch (e) {
-      // Pointeur déjà relâché : rien à capturer.
     }
     pointeurs.set(ev.pointerId, { id: ev.pointerId, x: ev.clientX, y: ev.clientY });
 
     if (pointeurs.size === 1) {
-      // Bouton secondaire ou molette enfoncée : la souris peut encore faire
-      // glisser la carte, mais elle ne doit pas répondre à la question.
       candidatClic = ev.button !== 0 ? null : {
         id: ev.pointerId,
         x: ev.clientX,
@@ -507,7 +460,6 @@ export function creerCarte(elementSvg, donnees) {
         cible: ev.target
       };
     } else {
-      // Un pincement, même avorté, ne doit jamais produire de clic.
       candidatClic = null;
       gesteMultiple = true;
       demarrerPincement();
@@ -558,7 +510,6 @@ export function creerCarte(elementSvg, donnees) {
   }
 
   function resoudreClic(clientX, clientY, cible) {
-    // Les pastilles priment : c'est toute leur raison d'être.
     const pastille = trouverPastille(clientX, clientY);
     if (pastille) return pastille.entite.id;
     const el = cible && cible.closest ? cible.closest('[data-id]') : null;
@@ -573,15 +524,11 @@ export function creerCarte(elementSvg, donnees) {
     try {
       elementSvg.releasePointerCapture(ev.pointerId);
     } catch (e) {
-      // Capture déjà perdue.
     }
 
     if (pincement && (!pointeurs.has(pincement.ids[0]) || !pointeurs.has(pincement.ids[1]))) {
       pincement = null;
     }
-    // Un doigt levé parmi trois abandonnait le pincement sans rien remettre à
-    // sa place : la carte restait figée, trop de pointeurs pour glisser et plus
-    // de pincement pour zoomer.
     if (!pincement && pointeurs.size >= 2) demarrerPincement();
 
     const candidat = candidatClic;
@@ -589,9 +536,6 @@ export function creerCarte(elementSvg, donnees) {
       candidatClic = null;
       const bref = performance.now() - candidat.temps < DUREE_CLIC;
       if (bref && !gesteMultiple && ev.type === 'pointerup' && rappelClic) {
-        // Position du relâchement, pas celle de l'appui : un tremblement sous le
-        // seuil de clic a déjà fait glisser la carte d'autant, et le point du
-        // plan visé n'est plus celui d'origine.
         const id = resoudreClic(ev.clientX, ev.clientY, candidat.cible);
         if (id) rappelClic(id);
       }
@@ -656,6 +600,7 @@ export function creerCarte(elementSvg, donnees) {
     zoomerSur: zoomerSur,
     reinitialiserVue: reinitialiserVue,
     filtrerContinent: filtrerContinent,
+    recadrerSurZone: recadrerSurZone,
     surClicEntite: function (rappel) { rappelClic = rappel; },
     detruire: detruire
   };

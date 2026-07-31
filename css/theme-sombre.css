@@ -1,12 +1,3 @@
-/* GeoGayssr — thème « Sombre ».
-
-   Uniquement des variables : la mise en page vient de base.css et ne doit pas
-   être touchée ici. Ajouter un sélecteur dans ce fichier casserait la promesse
-   que les deux thèmes se superposent exactement.
-
-   Parti pris : forte séparation, un seul aplat pour les terres. Les aplats de
-   la carte doivent rester lisibles en plein soleil sur un écran de téléphone. */
-
 :root {
   --fond: #0f1319;
   --fond-barre: #191f28;
@@ -30,7 +21,6 @@
   --fond-pastille: var(--pays);
   --contour-pastille: var(--fond-carte);
 
-  /* Carte d'un seul aplat : les sept teintes sont volontairement identiques. */
   --teinte-1: var(--pays);
   --teinte-2: var(--pays);
   --teinte-3: var(--pays);

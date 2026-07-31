@@ -1,6 +1,3 @@
-// Vérifie la logique du moteur de jeu : scoring, rattrapage, bornes, filtres.
-//   node build/verifier-partie.mjs
-
 import { creerPartie } from '../js/partie.js';
 
 const ENTITES = [

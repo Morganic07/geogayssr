@@ -6,34 +6,33 @@
 <meta name="theme-color" content="#12161c">
 <meta name="description" content="Jeu de géographie : reconnaître les pays du monde sur la carte.">
 <title>GeoGayssr</title>
-<!-- Deux feuilles, deux rôles : base.css porte toute la mise en page et ne
-     change jamais ; la feuille de thème ne porte que des variables de couleur.
-     Changer de thème échange la seconde, donc rien ne bouge à l'écran. -->
 <link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/theme-sombre.css" id="feuille-theme">
+<link rel="stylesheet" href="css/theme-sombre.css">
+<link rel="stylesheet" href="css/theme-sorbet.css" data-theme="sorbet">
 <script>
-  // Le thème est appliqué ici, avant le premier rendu : appliqué depuis main.js,
-  // il produirait un passage visible par le thème par défaut au chargement.
-  // Priorité : paramètre d'URL, puis dernier choix mémorisé, puis sombre.
-  window.THEMES = {
-    sombre: 'css/theme-sombre.css',
-    sorbet: 'css/theme-sorbet.css',
+  window.THEMES = ['sombre', 'sorbet'];
+  window.appliquerFeuilleTheme = function (nom) {
+    if (window.THEMES.indexOf(nom) < 0) return false;
+    var feuilles = document.querySelectorAll('link[data-theme]');
+    for (var i = 0; i < feuilles.length; i++) {
+      feuilles[i].disabled = feuilles[i].getAttribute('data-theme') !== nom;
+    }
+    return true;
   };
   (function () {
     var url = new URLSearchParams(location.search).get('theme');
     var memorise = null;
     try { memorise = localStorage.getItem('geogayssr.theme'); } catch (e) { /* stockage indisponible */ }
-    var choisi = window.THEMES[url] ? url : (window.THEMES[memorise] ? memorise : 'sombre');
+    var choisi = window.THEMES.indexOf(url) >= 0 ? url
+      : (window.THEMES.indexOf(memorise) >= 0 ? memorise : 'sombre');
     window.THEME_ACTIF = choisi;
-    document.getElementById('feuille-theme').href = window.THEMES[choisi];
+    window.appliquerFeuilleTheme(choisi);
   })();
 </script>
 </head>
 <body>
 
-<!-- Affiché par-dessus tout tant que le téléphone est en portrait. -->
 <div id="ecran-pivoter">
-  <!-- Purement décoratif : la consigne est portée par le texte qui suit. -->
   <div class="pivoter-icone" aria-hidden="true"></div>
   <p>Tourne ton téléphone à l'horizontale.</p>
 </div>
@@ -75,8 +74,6 @@
       <p class="intitule">Nombre de pays</p>
       <div class="choix">
         <label><input type="radio" name="longueur" value="nombre" checked> Rentrer une valeur</label>
-        <!-- Le maximum est posé par main.js d'après le nombre de pays réellement
-             jouables dans le périmètre et la zone choisis. -->
         <input type="number" id="nombre-pays" class="champ-nombre" value="10"
                min="1" step="1" inputmode="numeric" aria-label="Nombre de pays à deviner">
         <label><input type="radio" name="longueur" value="tout"> Tous les pays</label>
@@ -93,14 +90,13 @@
 
     <div class="groupe">
       <p class="intitule">Thème</p>
-      <!-- L'option cochée est posée par main.js d'après le thème réellement appliqué. -->
       <div class="choix">
         <label><input type="radio" name="theme" value="sombre"> Sombre</label>
         <label><input type="radio" name="theme" value="sorbet"> Sorbet</label>
       </div>
     </div>
 
-    </div><!-- .options -->
+    </div>
 
     <p id="meilleur-score" hidden></p>
     <p id="erreur-chargement" class="retour est-faux" hidden></p>
@@ -111,8 +107,6 @@
     </div>
   </section>
 
-  <!-- Les pays déjà ratés, toutes parties confondues. C'est de là que part la
-       révision : on voit d'abord ce qu'on va réviser. -->
   <section id="ecran-erreurs" class="ecran">
     <h2>Mes erreurs</h2>
     <p id="erreurs-resume"></p>
@@ -126,15 +120,12 @@
   <section id="ecran-jeu" class="ecran">
     <div class="barre">
       <p id="consigne" class="question"></p>
-      <!-- Le libellé visible serait redondant avec la consigne affichée juste à côté,
-           et coûterait de la hauteur en paysage : le nom accessible passe par aria-label. -->
       <input type="text" id="champ-reponse" hidden aria-label="Nom du pays surligné"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
              enterkeyhint="go" placeholder="Nom du pays">
       <button type="button" id="bouton-valider" hidden>OK</button>
       <p id="retour" class="retour" role="status" aria-live="polite"></p>
       <p id="progression" class="progression"></p>
-      <!-- Boutons sans texte visible : le libellé accessible est obligatoire. -->
       <button type="button" id="bouton-reset" class="bouton-discret bouton-icone"
               aria-label="Recommencer la partie" title="Recommencer">🔄</button>
       <button type="button" id="bouton-parametres" class="bouton-discret bouton-icone"
@@ -146,9 +137,6 @@
     </div>
   </section>
 
-  <!-- Réglages accessibles sans quitter la partie. N'y figure que ce qui peut
-       changer en cours de route : modifier le mode ou le périmètre voudrait dire
-       relancer la partie, ce qui est justement le rôle du bouton « Quitter ». -->
   <div id="panneau-parametres" class="panneau" hidden
        role="dialog" aria-modal="true" aria-labelledby="titre-parametres">
     <div class="panneau-boite">
@@ -171,8 +159,6 @@
     <h2>Partie terminée</h2>
     <p id="score-final" class="bilan"></p>
     <p id="message-final" class="message-fin"></p>
-    <!-- Masqué quand la partie est parfaite : un intitulé « Erreurs commises »
-         suivi du vide serait un reproche gratuit. -->
     <div id="bloc-erreurs" class="bloc-erreurs" hidden>
       <p class="intitule">Erreurs commises</p>
       <ul id="liste-ratees" class="liste-rates"></ul>

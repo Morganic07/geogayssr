@@ -1,6 +1,3 @@
-// Récupère les jeux Natural Earth v5 (domaine public) dans build/cache/.
-// Rien n'est retéléchargé si le fichier est déjà présent.
-
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -8,8 +5,6 @@ const https = require('https');
 const BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
 const CACHE = path.join(__dirname, 'cache');
 
-// `countries` est indispensable au périmètre ONU : dans `map_units`, la France
-// est éclatée en 14 morceaux et n'existe pas comme entité unique.
 const JEUX = [
   'ne_10m_admin_0_countries',
   'ne_10m_admin_0_map_units',
