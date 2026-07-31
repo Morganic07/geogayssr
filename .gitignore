@@ -1,0 +1,8 @@
+CLAUDE.md
+PLAN.md
+A FAIRE.md
+requis.txt
+
+# build et dépendances
+node_modules/
+build/cache/
