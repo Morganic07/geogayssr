@@ -22,12 +22,21 @@ const CONTINENTS = {
 const PAUSE_JUSTE = 550;
 const PAUSE_FAUX = 1900;
 
-const cachesDonnees = new Map();
+const PERIMETRES = {
+  onu: { fichier: 'onu' },
+  units: { fichier: 'units' },
+  subunits: { fichier: 'subunits' },
+  'hors-onu': { fichier: 'subunits', jouable: (e) => e.horsOnu === true },
+};
+
+const fichiersCharges = new Map();
+const vuesPerimetre = new Map();
 let alias = null;
 
 let carte = null;
 let partie = null;
 const resolveurs = new Map();
+let resolveurCourant = null;
 let perimetreCharge = null;
 let manche = null;
 let enAttente = false;
@@ -47,16 +56,23 @@ function retournerAccueil() {
 }
 
 
-async function chargerPerimetre(nom) {
-  if (!cachesDonnees.has(nom)) {
-    const reponse = await fetch(`data/carte-${nom}.json`);
+async function chargerFichier(fichier) {
+  if (!fichiersCharges.has(fichier)) {
+    const reponse = await fetch(`data/carte-${fichier}.json`);
     if (!reponse.ok) {
       throw new Error(`Carte introuvable (erreur ${reponse.status}). Recharge la page`);
     }
     const donnees = await reponse.json();
     donnees.parId = new Map(donnees.entites.map((e) => [e.id, e]));
-    cachesDonnees.set(nom, donnees);
+    fichiersCharges.set(fichier, donnees);
   }
+  return fichiersCharges.get(fichier);
+}
+
+async function chargerPerimetre(nom) {
+  const definition = PERIMETRES[nom];
+  if (!definition) throw new Error(`Carte inconnue « ${nom} ». Recharge la page`);
+
   if (!alias) {
     const reponse = await fetch('data/alias.json');
     if (!reponse.ok) {
@@ -64,7 +80,26 @@ async function chargerPerimetre(nom) {
     }
     alias = await reponse.json();
   }
-  return cachesDonnees.get(nom);
+  if (vuesPerimetre.has(nom)) return vuesPerimetre.get(nom);
+
+  const fond = await chargerFichier(definition.fichier);
+  const entites = definition.jouable ? fond.entites.filter(definition.jouable) : fond.entites;
+  if (entites.length === 0) {
+    throw new Error('Cette carte ne contient aucun pays à deviner. Regénère les données');
+  }
+  const vue = {
+    fichier: definition.fichier,
+    fond,
+    entites,
+    parId: fond.parId,
+    jouables: definition.jouable ? new Set(entites.map((e) => e.id)) : null,
+  };
+  vuesPerimetre.set(nom, vue);
+  return vue;
+}
+
+function estJouable(vue, id) {
+  return vue.jouables ? vue.jouables.has(id) : vue.parId.has(id);
 }
 
 
@@ -89,7 +124,7 @@ function lireOptions() {
 
 function rafraichirMaxPays() {
   const { perimetre, zone } = lireOptions();
-  const donnees = cachesDonnees.get(perimetre);
+  const donnees = vuesPerimetre.get(perimetre);
   const champ = $('#nombre-pays');
   if (!donnees) return;
   const total = zone
@@ -148,9 +183,9 @@ function rafraichirMeilleurScore() {
 }
 
 function entitesRateesIci() {
-  const donnees = cachesDonnees.get(lireOptions().perimetre);
+  const donnees = vuesPerimetre.get(lireOptions().perimetre);
   if (!donnees) return [];
-  return entitesLesPlusRatees().filter((id) => donnees.parId.has(id));
+  return entitesLesPlusRatees().filter((id) => estJouable(donnees, id));
 }
 
 const REVISION_MAX = 20;
@@ -181,7 +216,7 @@ function remplirListeEntites(liste, ids, donnees, echecs = null) {
 
 function afficherErreurs() {
   const ids = entitesRateesIci();
-  const donnees = cachesDonnees.get(lireOptions().perimetre);
+  const donnees = vuesPerimetre.get(lireOptions().perimetre);
   const { echecs } = chargerProgression();
   remplirListeEntites($('#liste-erreurs'), ids, donnees, echecs);
 
@@ -207,7 +242,7 @@ async function demarrerPartie(options, entitesImposees = null) {
 
   if (perimetreCharge !== options.perimetre) {
     if (carte) carte.detruire();
-    carte = creerCarte($('#carte'), donnees);
+    carte = creerCarte($('#carte'), donnees.fond, donnees.jouables);
     carte.dessiner();
     carte.surClicEntite(surClicCarte);
     perimetreCharge = options.perimetre;
@@ -240,9 +275,10 @@ async function demarrerPartie(options, entitesImposees = null) {
   };
 
   const estSaisie = options.mode === 'saisie';
-  if (estSaisie && !resolveurs.has(options.perimetre)) {
-    resolveurs.set(options.perimetre, creerResolveur(donnees.entites, alias));
+  if (estSaisie && !resolveurs.has(donnees.fichier)) {
+    resolveurs.set(donnees.fichier, creerResolveur(donnees.fond.entites, alias));
   }
+  resolveurCourant = estSaisie ? resolveurs.get(donnees.fichier) : null;
   $('#champ-reponse').hidden = !estSaisie;
   $('#bouton-valider').hidden = !estSaisie;
 
@@ -283,9 +319,8 @@ function validerSaisie() {
   if (!partie || partie.mode !== 'saisie' || enAttente) return;
   const texte = $('#champ-reponse').value.trim();
   if (!texte) return;
-  const resolveur = resolveurs.get(perimetreCharge);
-  if (!resolveur) return;
-  const trouve = resolveur.resoudre(texte);
+  if (!resolveurCourant) return;
+  const trouve = resolveurCourant.resoudre(texte);
   traiterReponse(trouve ? trouve.id : null);
 }
 
@@ -358,7 +393,7 @@ function terminerPartie() {
   }
 
   const ratees = partie.entitesRatees();
-  remplirListeEntites($('#liste-ratees'), ratees, cachesDonnees.get(perimetreCharge));
+  remplirListeEntites($('#liste-ratees'), ratees, vuesPerimetre.get(perimetreCharge));
   $('#bloc-erreurs').hidden = ratees.length === 0;
 
   afficherEcran('ecran-fin');

@@ -469,8 +469,8 @@ input::placeholder {
 
 .pays.est-masque,
 .pastille.est-masque {
-  fill: var(--pays);
-  opacity: var(--opacite-masque);
+  fill-opacity: var(--opacite-masque);
+  stroke-opacity: var(--opacite-masque);
   pointer-events: none;
 }
 

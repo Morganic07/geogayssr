@@ -28,10 +28,11 @@ function adoucir(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-export function creerCarte(elementSvg, donnees) {
+export function creerCarte(elementSvg, donnees, jouables = null) {
   const largeurPlan = donnees.largeur;
   const hauteurPlan = donnees.hauteur;
   const entites = donnees.entites || [];
+  const estJouable = (id) => !jouables || jouables.has(id);
 
   const fiches = new Map();
   const pastilles = [];
@@ -254,10 +255,12 @@ export function creerCarte(elementSvg, donnees) {
 
     for (const entite of entites) {
       const zone = entite.zone || [0, 0, 0, 0];
+      const jouable = estJouable(entite.id);
       const fiche = {
         entite: entite,
         chemin: null,
         pastille: null,
+        jouable: jouable,
         actif: true,
         visible: true,
         opacite: 1,
@@ -268,7 +271,7 @@ export function creerCarte(elementSvg, donnees) {
 
       if (entite.d) {
         const chemin = document.createElementNS(NS_SVG, 'path');
-        chemin.setAttribute('class', 'pays');
+        chemin.setAttribute('class', jouable ? 'pays' : 'pays est-masque');
         chemin.setAttribute('d', entite.d);
         chemin.setAttribute('data-id', entite.id);
         fiche.chemin = chemin;
@@ -277,7 +280,7 @@ export function creerCarte(elementSvg, donnees) {
 
       if (entite.pastille) {
         const cercle = document.createElementNS(NS_SVG, 'circle');
-        cercle.setAttribute('class', 'pastille');
+        cercle.setAttribute('class', jouable ? 'pastille' : 'pastille est-masque');
         cercle.setAttribute('cx', fiche.cx);
         cercle.setAttribute('cy', fiche.cy);
         cercle.setAttribute('r', RAYON_PASTILLE);
@@ -514,7 +517,7 @@ export function creerCarte(elementSvg, donnees) {
     let meilleure = null;
     let meilleureDistance = Infinity;
     for (const fiche of pastilles) {
-      if (!fiche.visible) continue;
+      if (!fiche.visible || !fiche.jouable) continue;
       const dx = fiche.cx - point.x;
       const dy = fiche.cy - point.y;
       const d = dx * dx + dy * dy;
@@ -532,7 +535,7 @@ export function creerCarte(elementSvg, donnees) {
     const el = cible && cible.closest ? cible.closest('[data-id]') : null;
     if (!el) return null;
     const fiche = fiches.get(el.getAttribute('data-id'));
-    return fiche && fiche.actif ? fiche.entite.id : null;
+    return fiche && fiche.actif && fiche.jouable ? fiche.entite.id : null;
   }
 
   function surPointeurHaut(ev) {
