@@ -303,7 +303,10 @@ function traiterReponse(idPropose) {
     retour.className = 'retour est-juste';
   } else {
     carte.definirEtat(question.id, 'faux');
-    if (partie.mode === 'clic') carte.zoomerSur(question.id);
+    if (partie.mode === 'clic') {
+      carte.memoriserVue();
+      carte.zoomerSur(question.id);
+    }
     retour.textContent = idPropose ? `Non — ${question.fr}` : `Non reconnu — ${question.fr}`;
     retour.className = 'retour est-faux';
     enregistrerEchec(question.id);
@@ -316,7 +319,7 @@ function traiterReponse(idPropose) {
       carte.definirEtat(question.id, 'neutre');
     }
     if (!resultat.correct && partie.mode === 'clic') {
-      carte.recadrerSurZone();
+      carte.restaurerVue();
     }
     poserQuestion();
   }, resultat.correct ? PAUSE_JUSTE : PAUSE_FAUX);

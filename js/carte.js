@@ -238,6 +238,7 @@ export function creerCarte(elementSvg, donnees) {
     etatsPoses.clear();
     bandeDebut = 0;
     bandeFin = 0;
+    vueMemorisee = null;
 
     elementSvg.setAttribute('viewBox', '0 0 ' + largeurPlan + ' ' + hauteurPlan);
     elementSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -386,6 +387,22 @@ export function creerCarte(elementSvg, donnees) {
 
   function reinitialiserVue() {
     animerVers({ x: base.x, y: base.y, l: base.l, h: base.h });
+  }
+
+  let vueMemorisee = null;
+
+  function memoriserVue() {
+    vueMemorisee = { cx: vue.x + vue.l / 2, cy: vue.y + vue.h / 2, l: vue.l };
+  }
+
+  function restaurerVue() {
+    if (!vueMemorisee) return;
+    const l = limiter(vueMemorisee.l, base.l / ZOOM_MAX, base.l);
+    const h = l * base.h / base.l;
+    const cible = { x: vueMemorisee.cx - l / 2, y: vueMemorisee.cy - h / 2, l: l, h: h };
+    vueMemorisee = null;
+    borner(cible);
+    animerVers(cible);
   }
 
 
@@ -590,6 +607,7 @@ export function creerCarte(elementSvg, donnees) {
     pointeurs.clear();
     pincement = null;
     candidatClic = null;
+    vueMemorisee = null;
     rappelClic = null;
   }
 
@@ -599,6 +617,8 @@ export function creerCarte(elementSvg, donnees) {
     reinitialiserEtats: reinitialiserEtats,
     zoomerSur: zoomerSur,
     reinitialiserVue: reinitialiserVue,
+    memoriserVue: memoriserVue,
+    restaurerVue: restaurerVue,
     filtrerContinent: filtrerContinent,
     recadrerSurZone: recadrerSurZone,
     surClicEntite: function (rappel) { rappelClic = rappel; },
