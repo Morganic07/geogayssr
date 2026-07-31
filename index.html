@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#12161c">
+<meta name="description" content="Jeu de géographie : reconnaître les pays du monde sur la carte.">
+<title>GeoGayssr</title>
+<link rel="stylesheet" href="css/style.css" id="feuille-theme">
+<script>
+  // Le thème est appliqué ici, avant le premier rendu : appliqué depuis main.js,
+  // il produirait un passage visible par le thème par défaut au chargement.
+  // Priorité : paramètre d'URL, puis dernier choix mémorisé, puis sombre.
+  window.THEMES = { sombre: 'css/style.css', sorbet: 'css/style-sorbet.css' };
+  (function () {
+    var url = new URLSearchParams(location.search).get('theme');
+    var memorise = null;
+    try { memorise = localStorage.getItem('geogayssr.theme'); } catch (e) { /* stockage indisponible */ }
+    var choisi = window.THEMES[url] ? url : (window.THEMES[memorise] ? memorise : 'sombre');
+    window.THEME_ACTIF = choisi;
+    document.getElementById('feuille-theme').href = window.THEMES[choisi];
+  })();
+</script>
+</head>
+<body>
+
+<!-- Affiché par-dessus tout tant que le téléphone est en portrait. -->
+<div id="ecran-pivoter">
+  <!-- Purement décoratif : la consigne est portée par le texte qui suit. -->
+  <div class="pivoter-icone" aria-hidden="true"></div>
+  <p>Tourne ton téléphone à l'horizontale.</p>
+</div>
+
+<main>
+
+  <section id="ecran-accueil" class="ecran est-actif">
+    <h1>GeoGayssr</h1>
+
+    <div class="groupe">
+      <p class="intitule">Mode</p>
+      <label><input type="radio" name="mode" value="clic" checked> Cliquer le pays</label>
+      <label><input type="radio" name="mode" value="saisie"> Écrire son nom</label>
+    </div>
+
+    <div class="groupe">
+      <p class="intitule">Pays</p>
+      <label><input type="radio" name="perimetre" value="onu" checked> Les 197 de l'ONU</label>
+      <label><input type="radio" name="perimetre" value="units"> Tous les territoires</label>
+      <label><input type="radio" name="perimetre" value="subunits"> Territoires extrêmes</label>
+    </div>
+
+    <div class="groupe">
+      <p class="intitule" id="titre-zone">Zone</p>
+      <select id="choix-zone" aria-labelledby="titre-zone">
+        <option value="">Monde entier</option>
+      </select>
+    </div>
+
+    <div class="groupe">
+      <p class="intitule">Longueur</p>
+      <label><input type="radio" name="longueur" value="10" checked> 10 pays</label>
+      <label><input type="radio" name="longueur" value="20"> 20 pays</label>
+      <label><input type="radio" name="longueur" value=""> Tout</label>
+    </div>
+
+    <div class="groupe">
+      <p class="intitule">En cas d'erreur</p>
+      <label><input type="radio" name="politique" value="une-chance" checked> Une seule chance</label>
+      <label><input type="radio" name="politique" value="rattrapage"> Le pays revient plus tard</label>
+    </div>
+
+    <div class="groupe">
+      <p class="intitule">Thème</p>
+      <!-- L'option cochée est posée par main.js d'après le thème réellement appliqué. -->
+      <label><input type="radio" name="theme" value="sombre"> Sombre</label>
+      <label><input type="radio" name="theme" value="sorbet"> Sorbet</label>
+    </div>
+
+    <p id="meilleur-score" hidden></p>
+    <p id="erreur-chargement" class="retour est-faux" hidden></p>
+
+    <div class="groupe">
+      <button type="button" id="bouton-jouer" class="bouton-principal">Jouer</button>
+      <button type="button" id="bouton-reviser" class="bouton-discret" hidden>Réviser mes erreurs</button>
+    </div>
+  </section>
+
+  <section id="ecran-jeu" class="ecran">
+    <div class="barre">
+      <p id="consigne" class="question"></p>
+      <!-- Le libellé visible serait redondant avec la consigne affichée juste à côté,
+           et coûterait de la hauteur en paysage : le nom accessible passe par aria-label. -->
+      <input type="text" id="champ-reponse" hidden aria-label="Nom du pays surligné"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             enterkeyhint="go" placeholder="Nom du pays">
+      <button type="button" id="bouton-valider" hidden>OK</button>
+      <p id="retour" class="retour" role="status" aria-live="polite"></p>
+      <p id="progression" class="progression"></p>
+      <button type="button" id="bouton-reset" class="bouton-discret">Recommencer</button>
+      <!-- Bouton sans texte visible : le libellé accessible est obligatoire. -->
+      <button type="button" id="bouton-quitter" class="bouton-discret"
+              aria-label="Quitter la partie et revenir à l'accueil" title="Quitter la partie">✕</button>
+    </div>
+
+    <div class="conteneur-carte">
+      <svg id="carte" role="img" aria-label="Carte du monde"></svg>
+    </div>
+  </section>
+
+  <section id="ecran-fin" class="ecran">
+    <h2>Partie terminée</h2>
+    <p id="score-final" class="bilan"></p>
+    <p id="message-final" class="message-fin"></p>
+    <ul id="liste-ratees" class="liste-rates"></ul>
+    <div class="groupe">
+      <button type="button" id="bouton-rejouer" class="bouton-principal">Rejouer</button>
+      <button type="button" id="bouton-accueil" class="bouton-discret">Accueil</button>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,1698 @@
+{
+ "ABW": [
+  "aruba"
+ ],
+ "ACA": [
+  "antigua"
+ ],
+ "ACB": [
+  "barbuda"
+ ],
+ "AFG": [
+  "afghanistan"
+ ],
+ "AGO": [
+  "angola"
+ ],
+ "AIA": [
+  "anguilla"
+ ],
+ "ALB": [
+  "albanie",
+  "albania"
+ ],
+ "ALD": [
+  "aland",
+  "iles aland"
+ ],
+ "AND": [
+  "andorre",
+  "andorra",
+  "principaute d andorre"
+ ],
+ "ARE": [
+  "emirats arabes unis",
+  "united arab emirates",
+  "eau",
+  "emirats"
+ ],
+ "ARG": [
+  "argentine",
+  "argentina"
+ ],
+ "ARM": [
+  "armenie",
+  "armenia"
+ ],
+ "ASM": [
+  "samoa americaines",
+  "american samoa"
+ ],
+ "ATA": [
+  "antarctique",
+  "antarctica",
+  "continent antarctique"
+ ],
+ "ATB": [
+  "antarctique",
+  "antarctica",
+  "continent antarctique"
+ ],
+ "ATC": [
+  "iles ashmore et cartier",
+  "ashmore and cartier islands",
+  "ashmore et cartier"
+ ],
+ "ATF": [
+  "terres australes et antarctiques francaises",
+  "french southern and antarctic lands",
+  "taaf",
+  "terres australes francaises",
+  "kerguelen"
+ ],
+ "ATG": [
+  "antigua et barbuda",
+  "antigua and barbuda"
+ ],
+ "ATP": [
+  "ile pierre ier",
+  "peter i island",
+  "pierre ier"
+ ],
+ "ATS": [
+  "iles orcades du sud",
+  "south orkney islands",
+  "orcades du sud"
+ ],
+ "AUA": [
+  "tasmanie",
+  "tasmania"
+ ],
+ "AUM": [
+  "ile macquarie",
+  "macquarie island",
+  "macquarie"
+ ],
+ "AUS": [
+  "australie",
+  "australia"
+ ],
+ "AUT": [
+  "autriche",
+  "austria"
+ ],
+ "AUZ": [
+  "australie",
+  "australia"
+ ],
+ "AZE": [
+  "azerbaidjan",
+  "azerbaijan"
+ ],
+ "BAC": [
+  "ile de l ascension",
+  "ascension"
+ ],
+ "BCR": [
+  "region de bruxelles capitale",
+  "brussels capital region",
+  "bruxelles"
+ ],
+ "BDI": [
+  "burundi"
+ ],
+ "BEL": [
+  "belgique",
+  "belgium",
+  "royaume de belgique"
+ ],
+ "BEN": [
+  "benin",
+  "dahomey"
+ ],
+ "BFA": [
+  "burkina faso",
+  "burkina",
+  "haute volta"
+ ],
+ "BFR": [
+  "brabant flamand",
+  "flemish brabant"
+ ],
+ "BGD": [
+  "bangladesh"
+ ],
+ "BGR": [
+  "bulgarie",
+  "bulgaria"
+ ],
+ "BHB": [
+  "brcko"
+ ],
+ "BHF": [
+  "federation de bosnie et herzegovine",
+  "federation of bosnia and herzegovina",
+  "federation de bosnie herzegovine"
+ ],
+ "BHR": [
+  "bahrein",
+  "bahrain"
+ ],
+ "BHS": [
+  "bahamas"
+ ],
+ "BIH": [
+  "bosnie herzegovine",
+  "bosnia and herzegovina",
+  "bosnie"
+ ],
+ "BIS": [
+  "republique serbe de bosnie",
+  "republika srpska"
+ ],
+ "BJN": [
+  "banc de bajo nuevo",
+  "bajo nuevo bank",
+  "bajo nuevo"
+ ],
+ "BLM": [
+  "saint barthelemy",
+  "saint barth"
+ ],
+ "BLR": [
+  "bielorussie",
+  "belarus",
+  "russie blanche"
+ ],
+ "BLZ": [
+  "belize",
+  "honduras britannique"
+ ],
+ "BMU": [
+  "bermudes",
+  "bermuda"
+ ],
+ "BOL": [
+  "bolivie",
+  "bolivia"
+ ],
+ "BQI": [
+  "ile de la navasse",
+  "navassa island",
+  "navassa"
+ ],
+ "BRA": [
+  "bresil",
+  "brazil"
+ ],
+ "BRB": [
+  "barbade",
+  "barbados"
+ ],
+ "BRI": [
+  "ilha brasileira",
+  "brazilian island",
+  "ile bresilienne"
+ ],
+ "BRN": [
+  "brunei"
+ ],
+ "BRT": [
+  "bir tawil"
+ ],
+ "BSI": [
+  "bassas da india"
+ ],
+ "BTN": [
+  "bhoutan",
+  "bhutan"
+ ],
+ "BVT": [
+  "ile bouvet",
+  "bouvet island",
+  "bouvet"
+ ],
+ "BWA": [
+  "botswana",
+  "bechuanaland"
+ ],
+ "BWR": [
+  "brabant wallon",
+  "walloon brabant"
+ ],
+ "CAF": [
+  "republique centrafricaine",
+  "central african republic",
+  "centrafrique"
+ ],
+ "CAN": [
+  "canada"
+ ],
+ "CCK": [
+  "iles cocos",
+  "cocos",
+  "iles keeling"
+ ],
+ "CHE": [
+  "suisse",
+  "switzerland",
+  "helvetie",
+  "confederation helvetique"
+ ],
+ "CHH": [
+  "hainan"
+ ],
+ "CHI": [
+  "republique populaire de chine",
+  "people s republic of china",
+  "chine"
+ ],
+ "CHL": [
+  "chili",
+  "chile"
+ ],
+ "CHN": [
+  "republique populaire de chine",
+  "people s republic of china",
+  "chine"
+ ],
+ "CHP": [
+  "ile de paques",
+  "easter island",
+  "rapa nui",
+  "paques"
+ ],
+ "CHS": [
+  "ile sala y gomez",
+  "isla salas y gomez",
+  "sala y gomez"
+ ],
+ "CHX": [
+  "chili",
+  "chile"
+ ],
+ "CIV": [
+  "cote d ivoire",
+  "ivory coast"
+ ],
+ "CLP": [
+  "ile clipperton",
+  "clipperton island",
+  "clipperton"
+ ],
+ "CMR": [
+  "cameroun",
+  "cameroon"
+ ],
+ "CNM": [
+  "zone tampon des nations unies a chypre",
+  "united nations buffer zone in cyprus"
+ ],
+ "COD": [
+  "republique democratique du congo",
+  "democratic republic of the congo",
+  "rdc",
+  "zaire",
+  "congo kinshasa",
+  "congo rdc"
+ ],
+ "COG": [
+  "republique du congo",
+  "republic of the congo",
+  "congo brazzaville"
+ ],
+ "COK": [
+  "iles cook",
+  "cook islands"
+ ],
+ "COL": [
+  "colombie",
+  "colombia"
+ ],
+ "COM": [
+  "comores",
+  "comoros"
+ ],
+ "CPV": [
+  "cap vert",
+  "cape verde",
+  "cabo verde",
+  "iles du cap vert"
+ ],
+ "CRI": [
+  "costa rica"
+ ],
+ "CSI": [
+  "iles de la mer de corail",
+  "coral sea islands"
+ ],
+ "CUB": [
+  "cuba"
+ ],
+ "CUW": [
+  "curacao"
+ ],
+ "CXR": [
+  "ile christmas",
+  "christmas island",
+  "christmas"
+ ],
+ "CYM": [
+  "iles caimans",
+  "cayman islands",
+  "caimans",
+  "cayman"
+ ],
+ "CYN": [
+  "chypre du nord",
+  "turkish republic of northern cyprus",
+  "republique turque de chypre du nord"
+ ],
+ "CYP": [
+  "chypre",
+  "cyprus"
+ ],
+ "CZE": [
+  "tchequie",
+  "czech republic",
+  "republique tcheque",
+  "czechia"
+ ],
+ "DEU": [
+  "allemagne",
+  "germany",
+  "rfa",
+  "republique federale d allemagne",
+  "deutschland"
+ ],
+ "DJI": [
+  "djibouti"
+ ],
+ "DMA": [
+  "dominique",
+  "dominica"
+ ],
+ "DNB": [
+  "bornholm"
+ ],
+ "DNK": [
+  "danemark",
+  "denmark",
+  "royaume du danemark"
+ ],
+ "DOM": [
+  "republique dominicaine",
+  "dominican republic"
+ ],
+ "DQI": [
+  "ile jarvis",
+  "jarvis island",
+  "jarvis"
+ ],
+ "DZA": [
+  "algerie",
+  "algeria"
+ ],
+ "ECD": [
+  "equateur",
+  "ecuador"
+ ],
+ "ECG": [
+  "galapagos",
+  "galapagos province",
+  "iles galapagos"
+ ],
+ "ECU": [
+  "equateur",
+  "ecuador"
+ ],
+ "EGY": [
+  "egypte",
+  "egypt"
+ ],
+ "ENG": [
+  "angleterre",
+  "england"
+ ],
+ "ERI": [
+  "erythree",
+  "eritrea"
+ ],
+ "ESB": [
+  "dhekelia",
+  "dhekelia cantonment"
+ ],
+ "ESC": [
+  "iles canaries",
+  "canary islands",
+  "canaries"
+ ],
+ "ESI": [
+  "iles baleares",
+  "balearic islands",
+  "baleares"
+ ],
+ "ESP": [
+  "espagne",
+  "spain"
+ ],
+ "EST": [
+  "estonie",
+  "estonia"
+ ],
+ "ESX": [
+  "espagne",
+  "spain"
+ ],
+ "ETH": [
+  "ethiopie",
+  "ethiopia",
+  "abyssinie"
+ ],
+ "EUI": [
+  "ile europa",
+  "europa island",
+  "europa"
+ ],
+ "FIN": [
+  "finlande",
+  "finland"
+ ],
+ "FJI": [
+  "fidji",
+  "fiji",
+  "iles fidji"
+ ],
+ "FLK": [
+  "iles malouines",
+  "falkland islands",
+  "malouines",
+  "iles falkland",
+  "falkland"
+ ],
+ "FQI": [
+  "ile baker",
+  "baker island",
+  "baker"
+ ],
+ "FRA": [
+  "france",
+  "republique francaise"
+ ],
+ "FRO": [
+  "iles feroe",
+  "faroe islands",
+  "feroe"
+ ],
+ "FSA": [
+  "terres australes francaises",
+  "french southern territories",
+  "terres australes et antarctiques francaises",
+  "taaf",
+  "kerguelen",
+  "iles kerguelen"
+ ],
+ "FSM": [
+  "etats federes de micronesie",
+  "federated states of micronesia",
+  "micronesie"
+ ],
+ "FXC": [
+  "corse",
+  "corsica"
+ ],
+ "FXX": [
+  "france",
+  "france metropolitaine",
+  "france hexagonale",
+  "hexagone"
+ ],
+ "GAB": [
+  "gabon"
+ ],
+ "GAZ": [
+  "bande de gaza",
+  "gaza strip",
+  "gaza"
+ ],
+ "GBR": [
+  "royaume uni",
+  "united kingdom",
+  "angleterre",
+  "grande bretagne",
+  "uk"
+ ],
+ "GEA": [
+  "adjarie",
+  "adjara"
+ ],
+ "GEG": [
+  "georgie",
+  "georgia"
+ ],
+ "GEO": [
+  "georgie",
+  "georgia"
+ ],
+ "GGA": [
+  "aurigny",
+  "alderney"
+ ],
+ "GGG": [
+  "guernesey",
+  "guernsey"
+ ],
+ "GGH": [
+  "herm"
+ ],
+ "GGS": [
+  "sercq",
+  "sark"
+ ],
+ "GGY": [
+  "guernesey",
+  "guernsey"
+ ],
+ "GHA": [
+  "ghana",
+  "cote de l or"
+ ],
+ "GIB": [
+  "gibraltar"
+ ],
+ "GIN": [
+  "guinee",
+  "guinea",
+  "guinee conakry"
+ ],
+ "GLP": [
+  "guadeloupe"
+ ],
+ "GMB": [
+  "gambie",
+  "gambia"
+ ],
+ "GNA": [
+  "annobon",
+  "annobon province"
+ ],
+ "GNB": [
+  "guinee bissau",
+  "guinea bissau"
+ ],
+ "GNK": [
+  "bioko",
+  "fernando poo"
+ ],
+ "GNQ": [
+  "guinee equatoriale",
+  "equatorial guinea"
+ ],
+ "GNR": [
+  "region continentale",
+  "rio muni"
+ ],
+ "GOI": [
+  "iles glorieuses",
+  "glorioso islands",
+  "glorieuses"
+ ],
+ "GRC": [
+  "grece",
+  "greece",
+  "hellade"
+ ],
+ "GRD": [
+  "grenade",
+  "grenada"
+ ],
+ "GRL": [
+  "groenland",
+  "greenland"
+ ],
+ "GTM": [
+  "guatemala"
+ ],
+ "GUF": [
+  "guyane",
+  "french guiana"
+ ],
+ "GUM": [
+  "guam"
+ ],
+ "GUY": [
+  "guyana"
+ ],
+ "HKG": [
+  "hong kong"
+ ],
+ "HMD": [
+  "iles heard et macdonald",
+  "heard island and mcdonald islands",
+  "heard et macdonald"
+ ],
+ "HND": [
+  "honduras"
+ ],
+ "HQI": [
+  "ile howland",
+  "howland island",
+  "howland"
+ ],
+ "HRV": [
+  "croatie",
+  "croatia"
+ ],
+ "HTI": [
+  "haiti"
+ ],
+ "HUN": [
+  "hongrie",
+  "hungary"
+ ],
+ "IDN": [
+  "indonesie",
+  "indonesia"
+ ],
+ "IMN": [
+  "ile de man",
+  "isle of man"
+ ],
+ "INA": [
+  "iles andaman",
+  "andaman islands",
+  "andaman"
+ ],
+ "IND": [
+  "inde",
+  "india",
+  "bharat"
+ ],
+ "INL": [
+  "lakshadweep",
+  "laquedives"
+ ],
+ "INN": [
+  "iles nicobar",
+  "nicobar islands",
+  "nicobar"
+ ],
+ "INX": [
+  "inde",
+  "india",
+  "bharat"
+ ],
+ "IOD": [
+  "aeroport de diego garcia",
+  "diego garcia navy airport",
+  "diego garcia"
+ ],
+ "IOT": [
+  "territoire britannique de l ocean indien",
+  "british indian ocean territory",
+  "biot"
+ ],
+ "IRK": [
+  "kurdistan irakien",
+  "kurdistan region",
+  "kurdistan"
+ ],
+ "IRL": [
+  "irlande",
+  "ireland",
+  "eire",
+  "republique d irlande"
+ ],
+ "IRN": [
+  "iran",
+  "perse"
+ ],
+ "IRQ": [
+  "irak",
+  "iraq"
+ ],
+ "IRR": [
+  "irak",
+  "iraq"
+ ],
+ "ISL": [
+  "islande",
+  "iceland"
+ ],
+ "ISR": [
+  "israel"
+ ],
+ "ITA": [
+  "italie",
+  "italy"
+ ],
+ "ITD": [
+  "sardaigne",
+  "sardinia"
+ ],
+ "ITI": [
+  "iles pelages",
+  "pelagie islands",
+  "pelages",
+  "lampedusa"
+ ],
+ "ITP": [
+  "pantelleria",
+  "pantelleria island"
+ ],
+ "ITX": [
+  "italie",
+  "italy"
+ ],
+ "ITY": [
+  "sicile",
+  "sicily"
+ ],
+ "JAM": [
+  "jamaique",
+  "jamaica"
+ ],
+ "JEY": [
+  "jersey"
+ ],
+ "JOR": [
+  "jordanie",
+  "jordan"
+ ],
+ "JPB": [
+  "iles d ogasawara",
+  "ogasawara islands",
+  "ogasawara",
+  "iles bonin"
+ ],
+ "JPH": [
+  "honshu"
+ ],
+ "JPI": [
+  "archipel d izu",
+  "izu islands",
+  "iles izu"
+ ],
+ "JPK": [
+  "prefecture de hokkaido",
+  "hokkaido prefecture",
+  "hokkaido"
+ ],
+ "JPN": [
+  "japon",
+  "japan",
+  "nippon"
+ ],
+ "JPO": [
+  "iles ryukyu",
+  "ryukyu islands",
+  "ryukyu",
+  "okinawa"
+ ],
+ "JPS": [
+  "shikoku"
+ ],
+ "JPV": [
+  "chaine des iles volcaniques",
+  "volcano islands",
+  "iles volcano",
+  "iwo jima"
+ ],
+ "JPX": [
+  "japon",
+  "japan",
+  "nippon"
+ ],
+ "JPY": [
+  "kyushu"
+ ],
+ "JQI": [
+  "atoll johnston",
+  "johnston atoll",
+  "johnston"
+ ],
+ "JUI": [
+  "ile juan de nova",
+  "juan de nova island",
+  "juan de nova"
+ ],
+ "KAB": [
+  "baikonour",
+  "baikonur"
+ ],
+ "KAS": [
+  "glacier de siachen",
+  "siachen glacier",
+  "siachen"
+ ],
+ "KAZ": [
+  "kazakhstan"
+ ],
+ "KEN": [
+  "kenya"
+ ],
+ "KGZ": [
+  "kirghizistan",
+  "kyrgyzstan",
+  "kirghizie",
+  "kirghizstan"
+ ],
+ "KHM": [
+  "cambodge",
+  "cambodia",
+  "kampuchea"
+ ],
+ "KIR": [
+  "kiribati"
+ ],
+ "KNA": [
+  "saint christophe et nieves",
+  "saint kitts and nevis",
+  "saint kitts et nevis"
+ ],
+ "KOB": [
+  "baengnyeong",
+  "baengnyeongdo"
+ ],
+ "KOD": [
+  "rochers liancourt",
+  "liancourt rocks",
+  "dokdo",
+  "takeshima"
+ ],
+ "KOJ": [
+  "jeju",
+  "jeju province"
+ ],
+ "KOR": [
+  "coree du sud",
+  "south korea",
+  "coree sud",
+  "republique de coree du sud"
+ ],
+ "KOS": [
+  "kosovo"
+ ],
+ "KOU": [
+  "ulleungdo"
+ ],
+ "KOX": [
+  "coree du sud",
+  "south korea",
+  "coree sud",
+  "republique de coree du sud"
+ ],
+ "KQI": [
+  "recif kingman",
+  "kingman reef",
+  "kingman"
+ ],
+ "KWT": [
+  "koweit",
+  "kuwait"
+ ],
+ "KXI": [
+  "coree du sud iles",
+  "south korea islands",
+  "iles de la coree du sud",
+  "iles sud coreennes"
+ ],
+ "LAO": [
+  "laos"
+ ],
+ "LBN": [
+  "liban",
+  "lebanon"
+ ],
+ "LBR": [
+  "liberia"
+ ],
+ "LBY": [
+  "libye",
+  "libya"
+ ],
+ "LCA": [
+  "sainte lucie",
+  "saint lucia"
+ ],
+ "LIE": [
+  "liechtenstein"
+ ],
+ "LKA": [
+  "sri lanka",
+  "ceylan"
+ ],
+ "LQI": [
+  "atoll palmyra",
+  "palmyra atoll",
+  "palmyra"
+ ],
+ "LSO": [
+  "lesotho",
+  "basutoland"
+ ],
+ "LTU": [
+  "lituanie",
+  "lithuania"
+ ],
+ "LUX": [
+  "luxembourg"
+ ],
+ "LVA": [
+  "lettonie",
+  "latvia"
+ ],
+ "MAC": [
+  "macao",
+  "macau"
+ ],
+ "MAF": [
+  "saint martin france",
+  "saint martin",
+  "partie francaise de saint martin",
+  "saint martin francais"
+ ],
+ "MAR": [
+  "maroc",
+  "morocco"
+ ],
+ "MCO": [
+  "monaco"
+ ],
+ "MDA": [
+  "moldavie",
+  "moldova"
+ ],
+ "MDG": [
+  "madagascar"
+ ],
+ "MDV": [
+  "maldives"
+ ],
+ "MEX": [
+  "mexique",
+  "mexico"
+ ],
+ "MHL": [
+  "iles marshall",
+  "marshall islands"
+ ],
+ "MKD": [
+  "macedoine du nord",
+  "north macedonia",
+  "macedoine",
+  "ancienne republique yougoslave de macedoine"
+ ],
+ "MLI": [
+  "mali"
+ ],
+ "MLT": [
+  "malte",
+  "malta"
+ ],
+ "MMR": [
+  "birmanie",
+  "myanmar",
+  "union du myanmar"
+ ],
+ "MNE": [
+  "montenegro"
+ ],
+ "MNG": [
+  "mongolie",
+  "mongolia"
+ ],
+ "MNP": [
+  "iles mariannes du nord",
+  "northern mariana islands",
+  "mariannes du nord",
+  "mariannes"
+ ],
+ "MOZ": [
+  "mozambique"
+ ],
+ "MQI": [
+  "iles midway",
+  "midway atoll",
+  "midway"
+ ],
+ "MRT": [
+  "mauritanie",
+  "mauritania"
+ ],
+ "MSR": [
+  "montserrat"
+ ],
+ "MTQ": [
+  "martinique"
+ ],
+ "MUS": [
+  "maurice",
+  "mauritius",
+  "ile maurice"
+ ],
+ "MWI": [
+  "malawi",
+  "nyassaland"
+ ],
+ "MYS": [
+  "malaisie",
+  "malaysia"
+ ],
+ "MYT": [
+  "mayotte"
+ ],
+ "NAM": [
+  "namibie",
+  "namibia",
+  "sud ouest africain"
+ ],
+ "NCL": [
+  "nouvelle caledonie",
+  "new caledonia",
+  "kanaky"
+ ],
+ "NER": [
+  "niger"
+ ],
+ "NFK": [
+  "ile norfolk",
+  "norfolk island",
+  "norfolk"
+ ],
+ "NGA": [
+  "nigeria"
+ ],
+ "NIC": [
+  "nicaragua"
+ ],
+ "NIR": [
+  "irlande du nord",
+  "northern ireland"
+ ],
+ "NIU": [
+  "niue"
+ ],
+ "NJM": [
+  "jan mayen"
+ ],
+ "NLD": [
+  "pays bas",
+  "netherlands",
+  "hollande",
+  "provinces unies"
+ ],
+ "NLX": [
+  "pays bas",
+  "netherlands",
+  "hollande",
+  "provinces unies"
+ ],
+ "NLY": [
+  "pays bas caribeens",
+  "caribbean netherlands",
+  "bonaire",
+  "antilles neerlandaises"
+ ],
+ "NOR": [
+  "norvege",
+  "norway"
+ ],
+ "NOW": [
+  "norvege",
+  "norway"
+ ],
+ "NPL": [
+  "nepal"
+ ],
+ "NRU": [
+  "nauru"
+ ],
+ "NSV": [
+  "svalbard",
+  "spitzberg",
+  "spitsberg"
+ ],
+ "NZA": [
+  "iles sub antarctiques de nouvelle zelande",
+  "new zealand subantarctic islands"
+ ],
+ "NZC": [
+  "iles chatham",
+  "chatham islands",
+  "chatham"
+ ],
+ "NZK": [
+  "iles kermadec",
+  "kermadec islands",
+  "kermadec"
+ ],
+ "NZL": [
+  "nouvelle zelande",
+  "new zealand"
+ ],
+ "NZN": [
+  "ile du nord",
+  "north island"
+ ],
+ "NZS": [
+  "ile du sud",
+  "south island"
+ ],
+ "OMN": [
+  "oman"
+ ],
+ "PAK": [
+  "pakistan"
+ ],
+ "PAN": [
+  "panama"
+ ],
+ "PAZ": [
+  "acores",
+  "azores"
+ ],
+ "PCN": [
+  "iles pitcairn",
+  "pitcairn islands",
+  "pitcairn"
+ ],
+ "PER": [
+  "perou",
+  "peru"
+ ],
+ "PFA": [
+  "iles paracels",
+  "paracel islands",
+  "paracels"
+ ],
+ "PGA": [
+  "iles spratly",
+  "spratly islands",
+  "spratly",
+  "spratleys",
+  "iles spratleys"
+ ],
+ "PHL": [
+  "philippines"
+ ],
+ "PLW": [
+  "palaos",
+  "palau",
+  "belau"
+ ],
+ "PMD": [
+  "madere",
+  "madeira"
+ ],
+ "PN1": [
+  "papouasie nouvelle guinee",
+  "papua new guinea",
+  "papouasie",
+  "png"
+ ],
+ "PNB": [
+  "bougainville",
+  "autonomous region of bougainville"
+ ],
+ "PNX": [
+  "papouasie nouvelle guinee",
+  "papua new guinea",
+  "papouasie",
+  "png"
+ ],
+ "POL": [
+  "pologne",
+  "poland"
+ ],
+ "PR1": [
+  "portugal"
+ ],
+ "PRI": [
+  "porto rico",
+  "puerto rico"
+ ],
+ "PRK": [
+  "coree du nord",
+  "north korea",
+  "coree nord"
+ ],
+ "PRX": [
+  "portugal"
+ ],
+ "PRY": [
+  "paraguay"
+ ],
+ "PSX": [
+  "palestine",
+  "territoires palestiniens",
+  "etat de palestine"
+ ],
+ "PYF": [
+  "polynesie francaise",
+  "french polynesia",
+  "polynesie",
+  "tahiti"
+ ],
+ "QAT": [
+  "qatar"
+ ],
+ "REU": [
+  "reunion",
+  "ile de la reunion"
+ ],
+ "ROU": [
+  "roumanie",
+  "romania"
+ ],
+ "RUA": [
+  "russie asie",
+  "russia asia",
+  "russie asiatique",
+  "russie d asie",
+  "siberie"
+ ],
+ "RUC": [
+  "republique autonome de crimee",
+  "autonomous republic of crimea",
+  "crimee"
+ ],
+ "RUE": [
+  "russie europe",
+  "russia europe",
+  "russie europeenne",
+  "russie d europe"
+ ],
+ "RUK": [
+  "oblast de kaliningrad",
+  "kaliningrad oblast",
+  "kaliningrad"
+ ],
+ "RUS": [
+  "russie",
+  "russia",
+  "federation de russie"
+ ],
+ "RWA": [
+  "rwanda"
+ ],
+ "SAH": [
+  "sahara occidental",
+  "western sahara",
+  "rasd"
+ ],
+ "SAU": [
+  "arabie saoudite",
+  "saudi arabia",
+  "arabie",
+  "royaume d arabie saoudite"
+ ],
+ "SCR": [
+  "recif de scarborough",
+  "scarborough shoal",
+  "scarborough"
+ ],
+ "SCT": [
+  "ecosse",
+  "scotland"
+ ],
+ "SDN": [
+  "soudan",
+  "sudan"
+ ],
+ "SDS": [
+  "soudan du sud",
+  "south sudan",
+  "sud soudan"
+ ],
+ "SEC": [
+  "ceuta"
+ ],
+ "SEM": [
+  "melilla"
+ ],
+ "SEN": [
+  "senegal"
+ ],
+ "SER": [
+  "banc de serranilla",
+  "serranilla bank",
+  "serranilla"
+ ],
+ "SGG": [
+  "ile de georgie du sud",
+  "south georgia",
+  "georgie du sud"
+ ],
+ "SGP": [
+  "singapour",
+  "singapore"
+ ],
+ "SGS": [
+  "georgie du sud et les iles sandwich du sud",
+  "south georgia and the south sandwich islands",
+  "georgie du sud"
+ ],
+ "SGX": [
+  "iles sandwich du sud",
+  "south sandwich islands",
+  "sandwich du sud"
+ ],
+ "SHN": [
+  "sainte helene",
+  "saint helena"
+ ],
+ "SHS": [
+  "sainte helene",
+  "saint helena"
+ ],
+ "SHT": [
+  "tristan da cunha"
+ ],
+ "SLB": [
+  "iles salomon",
+  "solomon islands"
+ ],
+ "SLE": [
+  "sierra leone"
+ ],
+ "SLV": [
+  "salvador",
+  "el salvador"
+ ],
+ "SMR": [
+  "saint marin",
+  "san marino"
+ ],
+ "SOL": [
+  "somaliland"
+ ],
+ "SOM": [
+  "somalie",
+  "somalia"
+ ],
+ "SOP": [
+  "puntland"
+ ],
+ "SOX": [
+  "somalie",
+  "somalia"
+ ],
+ "SPI": [
+  "champ de glace sud de patagonie",
+  "southern patagonian ice field",
+  "champ de glace de patagonie"
+ ],
+ "SPM": [
+  "saint pierre et miquelon",
+  "saint pierre and miquelon"
+ ],
+ "SRB": [
+  "serbie",
+  "serbia"
+ ],
+ "SRS": [
+  "serbie",
+  "serbia"
+ ],
+ "SRV": [
+  "voivodine",
+  "vojvodina",
+  "vojvodine"
+ ],
+ "STA": [
+  "principe"
+ ],
+ "STP": [
+  "sao tome et principe",
+  "sao tome and principe",
+  "sao tome"
+ ],
+ "STS": [
+  "sao tome",
+  "sao tome island"
+ ],
+ "SUR": [
+  "suriname"
+ ],
+ "SVK": [
+  "slovaquie",
+  "slovakia"
+ ],
+ "SVN": [
+  "slovenie",
+  "slovenia"
+ ],
+ "SWE": [
+  "suede",
+  "sweden"
+ ],
+ "SWZ": [
+  "eswatini",
+  "swaziland"
+ ],
+ "SXM": [
+  "saint martin pays bas",
+  "sint maarten",
+  "saint martin neerlandais",
+  "partie neerlandaise de saint martin"
+ ],
+ "SYC": [
+  "seychelles"
+ ],
+ "SYR": [
+  "syrie",
+  "syria"
+ ],
+ "SYU": [
+  "force des nations unies chargee d observer le degagement",
+  "united nations disengagement observer force",
+  "fnuod"
+ ],
+ "SYX": [
+  "syrie",
+  "syria"
+ ],
+ "TCA": [
+  "iles turques et caiques",
+  "turks and caicos islands",
+  "turques et caiques"
+ ],
+ "TCD": [
+  "tchad",
+  "chad"
+ ],
+ "TEI": [
+  "ile tromelin",
+  "tromelin island",
+  "tromelin"
+ ],
+ "TGO": [
+  "togo"
+ ],
+ "THA": [
+  "thailande",
+  "thailand",
+  "siam"
+ ],
+ "TJK": [
+  "tadjikistan",
+  "tajikistan"
+ ],
+ "TKL": [
+  "tokelau"
+ ],
+ "TKM": [
+  "turkmenistan"
+ ],
+ "TLP": [
+  "pante macassar",
+  "pante makassar subdistrict",
+  "oecusse"
+ ],
+ "TLS": [
+  "timor oriental",
+  "east timor",
+  "timor leste"
+ ],
+ "TLX": [
+  "timor oriental",
+  "east timor",
+  "timor leste"
+ ],
+ "TON": [
+  "tonga"
+ ],
+ "TTD": [
+  "trinite",
+  "trinidad"
+ ],
+ "TTG": [
+  "tobago"
+ ],
+ "TTO": [
+  "trinite et tobago",
+  "trinidad and tobago",
+  "trinidad et tobago"
+ ],
+ "TUN": [
+  "tunisie",
+  "tunisia"
+ ],
+ "TUR": [
+  "turquie",
+  "turkey",
+  "turkiye"
+ ],
+ "TUV": [
+  "tuvalu"
+ ],
+ "TWN": [
+  "taiwan",
+  "formose",
+  "republique de chine"
+ ],
+ "TZA": [
+  "tanzanie",
+  "tanzania",
+  "tanganyika"
+ ],
+ "TZZ": [
+  "zanzibar"
+ ],
+ "UGA": [
+  "ouganda",
+  "uganda"
+ ],
+ "UKR": [
+  "ukraine"
+ ],
+ "URY": [
+  "uruguay"
+ ],
+ "USA": [
+  "etats unis",
+  "united states of america",
+  "usa",
+  "us",
+  "amerique",
+  "etats unis d amerique",
+  "united states"
+ ],
+ "USB": [
+  "etats unis",
+  "united states of america",
+  "usa",
+  "us",
+  "amerique",
+  "etats unis d amerique",
+  "united states"
+ ],
+ "USG": [
+  "base navale de la baie de guantanamo",
+  "guantanamo bay naval base",
+  "guantanamo",
+  "baie de guantanamo"
+ ],
+ "USH": [
+  "hawai",
+  "hawaii"
+ ],
+ "USK": [
+  "alaska"
+ ],
+ "UZB": [
+  "ouzbekistan",
+  "uzbekistan"
+ ],
+ "VAT": [
+  "cite du vatican",
+  "vatican city",
+  "vatican",
+  "saint siege",
+  "etat de la cite du vatican"
+ ],
+ "VCT": [
+  "saint vincent et les grenadines",
+  "saint vincent and the grenadines"
+ ],
+ "VEN": [
+  "venezuela"
+ ],
+ "VGB": [
+  "iles vierges britanniques",
+  "british virgin islands"
+ ],
+ "VIR": [
+  "iles vierges des etats unis",
+  "united states virgin islands",
+  "iles vierges americaines"
+ ],
+ "VNM": [
+  "viet nam",
+  "vietnam"
+ ],
+ "VUT": [
+  "vanuatu",
+  "nouvelles hebrides"
+ ],
+ "WEB": [
+  "cisjordanie",
+  "west bank"
+ ],
+ "WLF": [
+  "wallis et futuna",
+  "wallis and futuna",
+  "wallis"
+ ],
+ "WLS": [
+  "pays de galles",
+  "wales",
+  "galles"
+ ],
+ "WQI": [
+  "ile wake",
+  "wake island",
+  "atoll de wake"
+ ],
+ "WSB": [
+  "akrotiri",
+  "akrotiri sovereign base area"
+ ],
+ "WSM": [
+  "samoa",
+  "samoa occidentales"
+ ],
+ "YEM": [
+  "yemen"
+ ],
+ "YES": [
+  "archipel de socotra",
+  "socotra archipelago",
+  "socotra"
+ ],
+ "ZAF": [
+  "afrique du sud",
+  "south africa",
+  "republique sud africaine"
+ ],
+ "ZAI": [
+  "archipel du prince edouard",
+  "prince edward islands",
+  "iles du prince edouard"
+ ],
+ "ZAX": [
+  "afrique du sud",
+  "south africa",
+  "republique sud africaine"
+ ],
+ "ZMB": [
+  "zambie",
+  "zambia",
+  "rhodesie du nord"
+ ],
+ "ZWE": [
+  "zimbabwe",
+  "rhodesie"
+ ]
+}

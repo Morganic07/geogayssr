@@ -1,0 +1,21 @@
+{
+  "name": "geogayssr",
+  "version": "1.0.0",
+  "description": "Jeu de géographie : reconnaître les pays du monde sur une carte.",
+  "main": "index.js",
+  "scripts": {
+    "donnees": "node build/telecharger.cjs && node build/generer.cjs && node build/alias.mjs",
+    "verifier": "node build/verifier-partie.mjs && node build/verifier-saisie.mjs",
+    "servir": "python3 -m http.server 8000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
+  },
+  "type": "module"
+}

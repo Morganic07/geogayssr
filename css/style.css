@@ -1,0 +1,484 @@
+/* GeoGayssr — feuille de style unique.
+   Paysage sur mobile : la carte est la vedette, l'interface se limite à une barre fine. */
+
+:root {
+  /* Palette sombre à forte séparation : les aplats de la carte doivent rester
+     lisibles en plein soleil sur un écran de téléphone. */
+  --fond: #0f1319;
+  --fond-barre: #191f28;
+  --fond-champ: #0b0e13;
+  --bordure: #2f3944;
+
+  --texte: #eef2f7;
+  --texte-doux: #9dabbb;
+
+  --pays: #c6cfda;
+  --pays-survol: #e2e8ef;
+  --frontiere: #323c48;
+
+  --juste: #16bf55;
+  --faux: #f45050;
+  --interroge: #ff8c17;
+
+  /* Texte posé sur un aplat vif : toujours le fond sombre, jamais du blanc. */
+  --texte-sur-vif: #0b0e13;
+
+  --rayon: 8px;
+  --cible: 44px;
+  --duree: 200ms;
+
+  /* Encoches : reprises une fois ici, consommées par les écrans. */
+  --marge-haut: env(safe-area-inset-top, 0px);
+  --marge-bas: env(safe-area-inset-bottom, 0px);
+  --marge-gauche: env(safe-area-inset-left, 0px);
+  --marge-droite: env(safe-area-inset-right, 0px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  /* Pas de rebond élastique : tout glissement appartient à la carte. */
+  overscroll-behavior: none;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* La saisie reste sélectionnable, sinon la correction d'une faute devient pénible. */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--interroge);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- Écrans */
+
+.ecran {
+  display: none;
+  /* Position fixe plutôt que flux normal : à l'ouverture du clavier virtuel le
+     viewport rétrécit, un écran en flux se recalculerait et ferait sauter la carte. */
+  position: fixed;
+  inset: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding:
+    calc(var(--marge-haut) + 0.5rem)
+    calc(var(--marge-droite) + 0.75rem)
+    calc(var(--marge-bas) + 0.5rem)
+    calc(var(--marge-gauche) + 0.75rem);
+  overflow: hidden;
+}
+
+.ecran.est-actif {
+  display: flex;
+}
+
+/* Les écrans autres que le jeu défilent : en paysage la hauteur est très courte. */
+#ecran-accueil,
+#ecran-fin {
+  overflow-y: auto;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+}
+
+#ecran-jeu {
+  gap: 0.4rem;
+  padding-top: var(--marge-haut);
+  padding-bottom: var(--marge-bas);
+}
+
+.ecran h1 {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ecran h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ecran p {
+  margin: 0;
+  color: var(--texte-doux);
+}
+
+.ecran ul,
+.ecran ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.ecran li {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------ Formulaires */
+
+fieldset {
+  margin: 0;
+  padding: 0.5rem 0 0;
+  border: 0;
+}
+
+legend,
+.intitule {
+  padding: 0 0 0.35rem;
+  color: var(--texte-doux);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.groupe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* Choix de partie : chaque case ou bouton radio devient une pastille tactile. */
+label:has(input[type="radio"]),
+label:has(input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--cible);
+  padding: 0 0.9rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-barre);
+  cursor: pointer;
+}
+
+label:has(input:checked) {
+  border-color: var(--interroge);
+  background: color-mix(in srgb, var(--interroge) 18%, var(--fond-barre));
+  color: var(--texte);
+}
+
+label:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button,
+select,
+input[type="text"],
+input[type="search"] {
+  min-height: var(--cible);
+  padding: 0 0.9rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-barre);
+  color: var(--texte);
+  /* 16px minimum : en dessous, iOS zoome à la mise au point du champ. */
+  font: inherit;
+  font-size: 1rem;
+}
+
+button {
+  min-width: var(--cible);
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  button:hover:not(:disabled) {
+    border-color: var(--texte-doux);
+  }
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Action principale d'un écran : le seul aplat vif hors de la carte. */
+.bouton-principal {
+  border-color: transparent;
+  background: var(--juste);
+  color: var(--texte-sur-vif);
+}
+
+.bouton-discret {
+  background: transparent;
+  color: var(--texte-doux);
+}
+
+input[type="text"],
+input[type="search"] {
+  background: var(--fond-champ);
+  /* Le clavier ne doit pas proposer de correction : les noms de pays sont piégeux. */
+  min-width: 0;
+}
+
+input::placeholder {
+  color: var(--texte-doux);
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------- Barre de jeu fine */
+
+.barre {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  min-height: calc(var(--cible) + 4px);
+  padding: 0.2rem calc(var(--marge-droite) + 0.5rem) 0.2rem calc(var(--marge-gauche) + 0.5rem);
+  background: var(--fond-barre);
+  border-radius: var(--rayon);
+}
+
+.barre .question {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barre .progression,
+.barre .score {
+  flex: 0 0 auto;
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.barre input[type="text"] {
+  flex: 1 1 12rem;
+}
+
+.barre button {
+  padding: 0 0.7rem;
+}
+
+/* Retour immédiat sur la dernière réponse. */
+.retour {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.retour.est-juste {
+  color: var(--juste);
+}
+
+.retour.est-faux {
+  color: var(--faux);
+}
+
+/* -------------------------------------------------------------- La carte */
+
+.conteneur-carte,
+.zone-carte,
+.carte {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  /* Le navigateur ne doit voler ni le pincement ni le glissement : le zoom et le
+     pan sont pilotés à la main sur le viewBox. */
+  touch-action: none;
+}
+
+.ecran svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  background: var(--fond);
+}
+
+/* Formes : uniquement des classes, jamais d'identifiant — le JS en pose des
+   centaines et les identifiants portent les codes pays. */
+.pays,
+.pastille {
+  fill: var(--pays);
+  stroke: var(--frontiere);
+  /* Épaisseur constante à l'écran quel que soit le facteur de zoom du viewBox. */
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  transition: fill var(--duree) ease-out, stroke var(--duree) ease-out;
+}
+
+.pays {
+  stroke-width: 0.6px;
+}
+
+.pastille {
+  stroke-width: 1.4px;
+  stroke: var(--fond);
+}
+
+@media (hover: hover) {
+  .pays:hover,
+  .pastille:hover {
+    fill: var(--pays-survol);
+  }
+}
+
+/* États de jeu — écrits en double classe pour passer devant les règles de base
+   quel que soit l'ordre d'écriture des attributs par le JS. */
+.pays.est-interroge,
+.pastille.est-interroge {
+  fill: var(--interroge);
+  stroke: var(--texte-sur-vif);
+}
+
+.pays.est-juste,
+.pastille.est-juste {
+  fill: var(--juste);
+  stroke: var(--texte-sur-vif);
+}
+
+.pays.est-faux,
+.pastille.est-faux {
+  fill: var(--faux);
+  stroke: var(--texte-sur-vif);
+}
+
+/* Hors du continent filtré : la forme reste dessinée pour garder le repère
+   géographique, mais s'efface et ne répond plus au doigt. */
+.pays.est-masque,
+.pastille.est-masque {
+  fill: var(--pays);
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------- Invitation à pivoter */
+
+/* Ne dépend pas de .est-actif : c'est l'orientation qui décide, pas le JS.
+   La spécificité de l'identifiant l'emporte sur .ecran.est-actif. */
+#ecran-pivoter,
+#ecran-pivoter.est-actif {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  .ecran,
+  .ecran.est-actif {
+    display: none;
+  }
+
+  #ecran-pivoter,
+  #ecran-pivoter.est-actif {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--fond);
+  }
+}
+
+#ecran-pivoter .pivoter-icone {
+  width: 3.5rem;
+  height: 5.5rem;
+  margin: 0 auto 1rem;
+  border: 3px solid var(--texte-doux);
+  border-radius: 10px;
+  animation: pivoter 2.4s ease-in-out infinite;
+}
+
+@keyframes pivoter {
+  0%, 30% { transform: rotate(0deg); }
+  55%, 100% { transform: rotate(-90deg); }
+}
+
+/* ------------------------------------------------------------ Écran de fin */
+
+.bilan {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.bilan .valeur {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bilan .etiquette {
+  color: var(--texte-doux);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.message-fin {
+  max-width: 34rem;
+  font-size: 1.05rem;
+  color: var(--texte);
+}
+
+.liste-rates li {
+  border-color: color-mix(in srgb, var(--faux) 55%, var(--bordure));
+}
+
+/* ------------------------------------------------ Mouvement réduit */
+
+@media (prefers-reduced-motion: reduce) {
+  .pays,
+  .pastille {
+    transition: none;
+  }
+
+  #ecran-pivoter .pivoter-icone {
+    animation: none;
+    transform: rotate(-90deg);
+  }
+
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}
