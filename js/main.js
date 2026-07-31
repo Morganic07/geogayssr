@@ -6,7 +6,7 @@ import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
 import { messagePourScore } from './messages.js';
 import {
-  chargerProgression, enregistrerScore, enregistrerEchec,
+  chargerProgression, enregistrerScore, enregistrerEchec, oublierEchec,
   entitesLesPlusRatees,
 } from './stockage.js';
 
@@ -67,16 +67,45 @@ async function chargerPerimetre(nom) {
 
 // ------------------------------------------------------------------ Accueil
 
+// Nombre de pays demandé, ramené dans les bornes du champ. Une valeur vide ou
+// aberrante ne doit pas se propager jusqu'au moteur de partie.
+function nombreDemande() {
+  const champ = $('#nombre-pays');
+  const maxi = Number(champ.max) > 0 ? Number(champ.max) : Infinity;
+  const brut = Math.floor(Number(champ.value));
+  if (!Number.isFinite(brut) || brut < 1) return 10;
+  return Math.min(brut, maxi);
+}
+
 function lireOptions() {
   const radio = (nom) => $(`input[name="${nom}"]:checked`)?.value ?? '';
-  const longueur = radio('longueur');
   return {
     mode: radio('mode'),
     perimetre: radio('perimetre'),
     politique: radio('politique'),
     zone: $('#choix-zone').value || null,
-    longueur: longueur ? Number(longueur) : null,
+    // null vaut « tous les pays » pour creerPartie.
+    longueur: radio('longueur') === 'nombre' ? nombreDemande() : null,
   };
+}
+
+// Le maximum du champ suit le périmètre et la zone : proposer 300 pays quand
+// l'Océanie n'en compte que 24 fabriquerait une attente déçue.
+function rafraichirMaxPays() {
+  const { perimetre, zone } = lireOptions();
+  const donnees = cachesDonnees.get(perimetre);
+  const champ = $('#nombre-pays');
+  if (!donnees) return;
+  const total = zone
+    ? donnees.entites.filter((e) => e.continent === zone).length
+    : donnees.entites.length;
+  champ.max = String(total);
+  champ.title = `Entre 1 et ${total}`;
+  if (Number(champ.value) > total) champ.value = String(total);
+}
+
+function rafraichirChampNombre() {
+  $('#nombre-pays').disabled = $('input[name="longueur"]:checked')?.value !== 'nombre';
 }
 
 function cleScore(o) {
@@ -106,7 +135,11 @@ async function rafraichirZones() {
     select.append(option);
   }
   select.value = presents.includes(choixActuel) ? choixActuel : '';
+  rafraichirMaxPays();
   rafraichirMeilleurScore();
+  // Les erreurs se filtrent au périmètre courant : la liste ne peut être établie
+  // qu'une fois ses données chargées, donc pas avant ici.
+  rafraichirBoutonErreurs();
 }
 
 function rafraichirMeilleurScore() {
@@ -126,15 +159,55 @@ function rafraichirMeilleurScore() {
 // territoires » ne donne rien à réviser en « 197 de l'ONU », où cet identifiant
 // n'existe pas. Le bouton ne s'affiche donc que si le périmètre courant contient
 // vraiment quelque chose à revoir.
-function entitesRevisablesIci() {
+function entitesRateesIci() {
   const donnees = cachesDonnees.get(lireOptions().perimetre);
   if (!donnees) return [];
   const presents = new Set(donnees.entites.map((e) => e.id));
-  return entitesLesPlusRatees(50).filter((id) => presents.has(id)).slice(0, 20);
+  return entitesLesPlusRatees(1000).filter((id) => presents.has(id));
 }
 
-function rafraichirBoutonRevision() {
-  $('#bouton-reviser').hidden = entitesRevisablesIci().length === 0;
+// Une révision ne rejoue pas des dizaines de pays d'affilée : elle prend les plus
+// ratés. Le nombre est annoncé sur l'écran des erreurs, jamais tronqué en silence.
+const REVISION_MAX = 20;
+
+function entitesRevisablesIci() {
+  return entitesRateesIci().slice(0, REVISION_MAX);
+}
+
+function rafraichirBoutonErreurs() {
+  $('#bouton-voir-erreurs').hidden = entitesRateesIci().length === 0;
+}
+
+function afficherErreurs() {
+  const ids = entitesRateesIci();
+  const donnees = cachesDonnees.get(lireOptions().perimetre);
+  const { echecs } = chargerProgression();
+
+  const liste = $('#liste-erreurs');
+  liste.textContent = '';
+  for (const id of ids) {
+    const entite = donnees ? donnees.entites.find((e) => e.id === id) : null;
+    const item = document.createElement('li');
+    item.textContent = entite ? entite.fr : id;
+    // Le nombre de fois où le pays a été raté n'apparaît qu'au-delà d'une fois :
+    // « ×1 » sur toute la liste n'apprend rien.
+    if (echecs[id] > 1) {
+      const compteur = document.createElement('span');
+      compteur.className = 'compteur';
+      compteur.textContent = `×${echecs[id]}`;
+      item.append(' ', compteur);
+    }
+    liste.append(item);
+  }
+
+  const pluriel = ids.length > 1 ? 's' : '';
+  $('#erreurs-resume').textContent = ids.length === 0
+    ? 'Aucune erreur enregistrée dans ce périmètre.'
+    : `${ids.length} pays raté${pluriel} dans ce périmètre` +
+      (ids.length > REVISION_MAX ? ` — la révision portera sur les ${REVISION_MAX} plus ratés.` : '.');
+
+  $('#bouton-reviser').hidden = ids.length === 0;
+  afficherEcran('ecran-erreurs');
 }
 
 function signalerErreur(e) {
@@ -187,6 +260,7 @@ async function demarrerPartie(options, entitesImposees = null) {
   // Une révision ne joue ni la longueur ni la zone du formulaire : la ranger sous
   // la clé d'une configuration normale y écraserait un score jamais obtenu.
   partie.cle = entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options);
+  partie.estRevision = entitesImposees !== null;
 
   const estSaisie = options.mode === 'saisie';
   $('#champ-reponse').hidden = !estSaisie;
@@ -202,6 +276,12 @@ function poserQuestion() {
   if (!question) return terminerPartie();
 
   $('#progression').textContent = `${question.index} / ${question.total}`;
+  // Fraction d'avancement offerte à la feuille de style, qui en fait la jauge
+  // affichée sous le compteur.
+  $('#progression').style.setProperty(
+    '--avancement',
+    question.total ? question.index / question.total : 0,
+  );
   $('#retour').textContent = '';
   $('#retour').className = 'retour';
 
@@ -244,9 +324,11 @@ function traiterReponse(idPropose) {
     retour.textContent = 'Juste';
     retour.className = 'retour est-juste';
   } else {
-    // La bonne réponse est toujours montrée : c'est un jeu pour apprendre.
-    if (idPropose && idPropose !== question.id) carte.definirEtat(idPropose, 'faux');
-    carte.definirEtat(question.id, 'juste');
+    // La bonne réponse est montrée — c'est un jeu pour apprendre — mais en rouge :
+    // elle marque une erreur, pas un point gagné. Le pays cliqué à tort n'est
+    // volontairement pas marqué lui aussi : deux rouges à l'écran, on ne saurait
+    // plus lequel est la réponse.
+    carte.definirEtat(question.id, 'faux');
     if (partie.mode === 'clic') carte.zoomerSur(question.id);
     retour.textContent = idPropose ? `Non — ${question.fr}` : `Non reconnu — ${question.fr}`;
     retour.className = 'retour est-faux';
@@ -270,32 +352,58 @@ function traiterReponse(idPropose) {
   }, resultat.correct ? PAUSE_JUSTE : PAUSE_FAUX);
 }
 
+// Un bloc du bilan : le chiffre au-dessus, ce qu'il compte en dessous.
+function blocBilan(valeur, etiquette, principal = false) {
+  const bloc = document.createElement('span');
+  bloc.className = principal ? 'bloc bloc-principal' : 'bloc';
+  const nombre = document.createElement('span');
+  nombre.className = 'valeur';
+  nombre.textContent = valeur;
+  const legende = document.createElement('span');
+  legende.className = 'etiquette';
+  legende.textContent = etiquette;
+  bloc.append(nombre, legende);
+  return bloc;
+}
+
 function terminerPartie() {
   const s = partie.score();
-  const reussies = s.premierCoup + s.rattrapage;
   const pourcentage = s.total ? Math.round((s.premierCoup / s.total) * 100) : 0;
 
   enregistrerScore(partie.cle, pourcentage);
 
-  $('#score-final').textContent =
-    `${s.premierCoup} sur ${s.total} du premier coup` +
-    (s.rattrapage ? `, ${s.rattrapage} au rattrapage` : '') +
-    ` — ${pourcentage} %`;
+  // Le pourcentage est le résultat, le détail vient après : en chiffres alignés
+  // plutôt qu'en phrase, il se lit d'un coup d'œil sur un écran de téléphone.
+  const bilan = $('#score-final');
+  bilan.textContent = '';
+  bilan.append(
+    blocBilan(`${pourcentage} %`, 'de réussite', true),
+    blocBilan(`${s.premierCoup} / ${s.total}`, 'du premier coup'),
+  );
+  if (s.rattrapage) bilan.append(blocBilan(String(s.rattrapage), 'au rattrapage'));
   $('#message-final').textContent = messagePourScore(pourcentage);
 
+  // Une révision réussie fait sortir le pays de la liste des erreurs. Raté à
+  // nouveau, l'échec vient d'être réenregistré et il y reste. Hors révision, la
+  // liste ne se vide pas toute seule : elle se purge là où on est venu pour ça.
+  if (partie.estRevision) {
+    for (const id of partie.entitesTrouvees()) oublierEchec(id);
+  }
+
+  const ratees = partie.entitesRatees();
   const liste = $('#liste-ratees');
-  liste.innerHTML = '';
+  liste.textContent = '';
   const donnees = cachesDonnees.get(perimetreCharge);
-  for (const id of partie.entitesRatees()) {
+  for (const id of ratees) {
     const entite = donnees.entites.find((e) => e.id === id);
     const item = document.createElement('li');
     item.textContent = entite ? entite.fr : id;
     liste.append(item);
   }
+  $('#bloc-erreurs').hidden = ratees.length === 0;
 
-  void reussies;
   afficherEcran('ecran-fin');
-  rafraichirBoutonRevision();
+  rafraichirBoutonErreurs();
 }
 
 // ------------------------------------------------------------------ Câblage
@@ -337,10 +445,20 @@ async function lancer(options, entitesImposees = null) {
 
 $('#bouton-jouer').addEventListener('click', () => lancer(lireOptions()));
 
+$('#bouton-voir-erreurs').addEventListener('click', afficherErreurs);
+
+$('#bouton-retour-accueil').addEventListener('click', () => {
+  afficherEcran('ecran-accueil');
+  rafraichirMeilleurScore();
+  rafraichirBoutonErreurs();
+});
+
 $('#bouton-reviser').addEventListener('click', () => {
   const ratees = entitesRevisablesIci();
+  // La liste a pu se vider entre l'affichage de l'écran et l'appui : changer de
+  // périmètre dans un autre onglet suffit.
   if (ratees.length === 0) {
-    rafraichirBoutonRevision();
+    afficherErreurs();
     return;
   }
   lancer(lireOptions(), ratees);
@@ -360,14 +478,6 @@ $('#bouton-reset').addEventListener('click', () => {
   if (dernieresOptions) lancer(dernieresOptions.options, dernieresOptions.entitesImposees);
 });
 
-$('#bouton-quitter').addEventListener('click', () => {
-  clearTimeout(minuterie);
-  enAttente = false;
-  afficherEcran('ecran-accueil');
-  rafraichirMeilleurScore();
-  rafraichirBoutonRevision();
-});
-
 $('#bouton-rejouer').addEventListener('click', () => {
   if (dernieresOptions) lancer(dernieresOptions.options, dernieresOptions.entitesImposees);
 });
@@ -375,18 +485,68 @@ $('#bouton-rejouer').addEventListener('click', () => {
 $('#bouton-accueil').addEventListener('click', () => {
   afficherEcran('ecran-accueil');
   rafraichirMeilleurScore();
-  rafraichirBoutonRevision();
+  rafraichirBoutonErreurs();
+});
+
+// -------------------------------------------------- Paramètres en cours de jeu
+
+function ouvrirParametres() {
+  $('#panneau-parametres').hidden = false;
+  $('#bouton-reprendre').focus();
+}
+
+function fermerParametres() {
+  if ($('#panneau-parametres').hidden) return;
+  $('#panneau-parametres').hidden = true;
+  // Rendre le clavier au champ, sinon en mode saisie il faut le retoucher du
+  // doigt avant de pouvoir répondre.
+  if (partie && partie.mode === 'saisie' && !enAttente) $('#champ-reponse').focus();
+  else $('#bouton-parametres').focus();
+}
+
+$('#bouton-parametres').addEventListener('click', ouvrirParametres);
+$('#bouton-reprendre').addEventListener('click', fermerParametres);
+
+// Un clic sur le fond du panneau, en dehors de la boîte, vaut « Reprendre ».
+$('#panneau-parametres').addEventListener('click', (ev) => {
+  if (ev.target === $('#panneau-parametres')) fermerParametres();
+});
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') fermerParametres();
+});
+
+$('#bouton-quitter').addEventListener('click', () => {
+  clearTimeout(minuterie);
+  enAttente = false;
+  fermerParametres();
+  afficherEcran('ecran-accueil');
+  rafraichirMeilleurScore();
+  rafraichirBoutonErreurs();
 });
 
 // ------------------------------------------------------------------ Thème
 // Le thème n'entre pas dans la clé de score : changer d'apparence ne doit pas
 // repartir d'un tableau vierge.
 
+// Le thème se choisit à deux endroits : dans les options de l'accueil et dans le
+// panneau ouvert en cours de partie. Deux groupes de boutons radio distincts —
+// un même `name` n'autorise qu'un seul coché dans toute la page, les deux
+// listes se décocheraient l'une l'autre — donc une synchronisation explicite.
+const CHAMPS_THEME = 'input[name="theme"], input[name="theme-jeu"]';
+
+function synchroniserTheme(nom) {
+  for (const champ of document.querySelectorAll(CHAMPS_THEME)) {
+    champ.checked = champ.value === nom;
+  }
+}
+
 function appliquerTheme(nom) {
   const themes = window.THEMES || {};
   const feuille = document.getElementById('feuille-theme');
   if (!themes[nom] || !feuille) return;
   feuille.href = themes[nom];
+  synchroniserTheme(nom);
   try {
     localStorage.setItem('geogayssr.theme', nom);
   } catch (e) {
@@ -394,8 +554,8 @@ function appliquerTheme(nom) {
   }
 }
 
-for (const champ of document.querySelectorAll('input[name="theme"]')) {
-  champ.checked = champ.value === (window.THEME_ACTIF || 'sombre');
+synchroniserTheme(window.THEME_ACTIF || 'sombre');
+for (const champ of document.querySelectorAll(CHAMPS_THEME)) {
   champ.addEventListener('change', () => {
     if (champ.checked) appliquerTheme(champ.value);
   });
@@ -406,10 +566,25 @@ for (const champ of document.querySelectorAll('input[name="perimetre"]')) {
 }
 for (const nom of ['mode', 'longueur', 'politique']) {
   for (const champ of document.querySelectorAll(`input[name="${nom}"]`)) {
-    champ.addEventListener('change', rafraichirMeilleurScore);
+    champ.addEventListener('change', () => {
+      rafraichirChampNombre();
+      rafraichirMeilleurScore();
+    });
   }
 }
-$('#choix-zone').addEventListener('change', rafraichirMeilleurScore);
 
+// Sur « change » et non « input » : borner pendant la frappe rendrait impossible
+// de taper 23 en passant par 2, qui serait aussitôt réécrit.
+$('#nombre-pays').addEventListener('change', () => {
+  $('#nombre-pays').value = String(nombreDemande());
+  rafraichirMeilleurScore();
+});
+
+$('#choix-zone').addEventListener('change', () => {
+  rafraichirMaxPays();
+  rafraichirMeilleurScore();
+});
+
+rafraichirChampNombre();
 rafraichirZones();
-rafraichirBoutonRevision();
+rafraichirBoutonErreurs();

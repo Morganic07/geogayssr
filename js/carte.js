@@ -24,6 +24,15 @@ const MARGE_CADRAGE = 1.4;
 // serait de dimension nulle.
 const ETENDUE_MINI = 60;
 
+// Cadrage d'un pays interrogé : volontairement plus large que le cadrage d'une
+// zone. Serré sur ses frontières, un pays n'est qu'une forme hors contexte ;
+// c'est le voisinage qui permet de le reconnaître. Le pays reste au centre, on
+// en montre seulement davantage autour.
+const MARGE_QUESTION = 2.6;
+// Un sixième de la largeur du monde au maximum : au-delà, même un micro-État
+// serait cadré sur une portion de côte où plus rien n'est identifiable.
+const ZOOM_QUESTION_MAX = 6;
+
 const CLASSES_ETAT = { interroge: 'est-interroge', juste: 'est-juste', faux: 'est-faux' };
 const TOUTES_CLASSES_ETAT = ['est-interroge', 'est-juste', 'est-faux'];
 
@@ -231,13 +240,13 @@ export function creerCarte(elementSvg, donnees) {
     imageAnim = requestAnimationFrame(pas);
   }
 
-  function cadrerSur(x0, y0, x1, y1, anime) {
+  function cadrerSur(x0, y0, x1, y1, anime, marge = MARGE_CADRAGE, zoomMax = ZOOM_MAX) {
     const ratio = base.l / base.h;
-    let l = Math.max((x1 - x0) * MARGE_CADRAGE, ETENDUE_MINI);
-    let h = Math.max((y1 - y0) * MARGE_CADRAGE, ETENDUE_MINI / ratio);
+    let l = Math.max((x1 - x0) * marge, ETENDUE_MINI);
+    let h = Math.max((y1 - y0) * marge, ETENDUE_MINI / ratio);
     if (l / h < ratio) l = h * ratio;
     else h = l / ratio;
-    l = limiter(l, base.l / ZOOM_MAX, base.l);
+    l = limiter(l, base.l / zoomMax, base.l);
     h = l / ratio;
 
     const cible = { x: (x0 + x1) / 2 - l / 2, y: (y0 + y1) / 2 - h / 2, l: l, h: h };
@@ -411,7 +420,7 @@ export function creerCarte(elementSvg, donnees) {
     const fiche = fiches.get(id);
     if (!fiche) return;
     const z = fiche.entite.zone || [fiche.cx, fiche.cy, fiche.cx, fiche.cy];
-    cadrerSur(z[0], z[1], z[2], z[3], true);
+    cadrerSur(z[0], z[1], z[2], z[3], true, MARGE_QUESTION, ZOOM_QUESTION_MAX);
   }
 
   function reinitialiserVue() {

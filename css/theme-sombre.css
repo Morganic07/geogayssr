@@ -1,0 +1,50 @@
+/* GeoGayssr — thème « Sombre ».
+
+   Uniquement des variables : la mise en page vient de base.css et ne doit pas
+   être touchée ici. Ajouter un sélecteur dans ce fichier casserait la promesse
+   que les deux thèmes se superposent exactement.
+
+   Parti pris : forte séparation, un seul aplat pour les terres. Les aplats de
+   la carte doivent rester lisibles en plein soleil sur un écran de téléphone. */
+
+:root {
+  --fond: #0f1319;
+  --fond-barre: #191f28;
+  --fond-champ: #0b0e13;
+  --fond-carte: #0b0e13;
+  --bordure: #2f3944;
+  --contour: #5e7288;
+
+  --texte: #eef2f7;
+  --texte-doux: #9dabbb;
+  --texte-sur-vif: #0b0e13;
+
+  --accent: #ff8c17;
+
+  --pays: #c6cfda;
+  --pays-survol: #e2e8ef;
+  --frontiere: #323c48;
+  --opacite-masque: 0.16;
+  --trait-pays: 0.6px;
+  --trait-pastille: 1.4px;
+  --fond-pastille: var(--pays);
+  --contour-pastille: var(--fond-carte);
+
+  /* Carte d'un seul aplat : les sept teintes sont volontairement identiques. */
+  --teinte-1: var(--pays);
+  --teinte-2: var(--pays);
+  --teinte-3: var(--pays);
+  --teinte-4: var(--pays);
+  --teinte-5: var(--pays);
+  --teinte-6: var(--pays);
+  --teinte-7: var(--pays);
+
+  --juste: #16bf55;
+  --faux: #f45050;
+  --interroge: #ff8c17;
+
+  --rayon: 10px;
+  --rayon-pastille: 10px;
+  --ombre: none;
+  --ombre-flottante: none;
+}

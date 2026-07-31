@@ -55,6 +55,26 @@ v('terminée', p.estTerminee());
 v('3 ratés', p.score().rates === 3);
 v('chaque entité reproposée une seule fois (6 tours)', tours === 6);
 
+console.log('— ce qui compte comme deviné —');
+p = creerPartie({ entites: ENTITES, politique: 'une-chance' });
+p.demarrer();
+let premier = p.questionCourante().id;
+p.repondre(premier);
+while (!p.estTerminee()) p.repondre('MAUVAIS');
+v('seule la bonne réponse est trouvée', p.entitesTrouvees().join() === premier);
+v('les deux autres sont ratées', p.entitesRatees().length === 2);
+
+p = creerPartie({ entites: ENTITES, politique: 'rattrapage' });
+p.demarrer();
+tours = 0;
+while (!p.estTerminee() && tours < 30) {
+  const q = p.questionCourante();
+  p.repondre(q.estRattrapage ? q.id : 'MAUVAIS');
+  tours++;
+}
+v('un rattrapage ne compte pas comme deviné', p.entitesTrouvees().length === 0);
+v('ni comme raté', p.entitesRatees().length === 0);
+
 console.log('— filtres —');
 p = creerPartie({ entites: ENTITES, zone: 'Europe' }); p.demarrer();
 v('zone Europe = 2 questions', p.questionCourante().total === 2);

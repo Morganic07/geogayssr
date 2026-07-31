@@ -1,0 +1,59 @@
+/* GeoGayssr — thème « Sorbet ».
+
+   Uniquement des variables : la mise en page vient de base.css et ne doit pas
+   être touchée ici. Ajouter un sélecteur dans ce fichier casserait la promesse
+   que les deux thèmes se superposent exactement.
+
+   Parti pris : la carte est un patchwork pastel, comme dans un atlas scolaire
+   où chaque pays reçoit sa teinte pour se distinguer de ses voisins. Les aplats
+   restent très clairs et peu saturés, de sorte que les trois couleurs de jeu —
+   émeraude, framboise, safran — tranchent nettement par-dessus.
+
+   Fond clair assumé : sur un écran de téléphone en plein soleil, un fond clair
+   se lit mieux qu'un fond sombre, qui devient un miroir. */
+
+:root {
+  --fond: #f6f1f7;
+  --fond-barre: #fffdfe;
+  --fond-champ: #fdf8fb;
+  --fond-carte: #eae3ee;
+  --bordure: #e2d4e6;
+  --contour: #8c8290;
+
+  --texte: #3a2c42;
+  --texte-doux: #6b5878;
+  --texte-sur-vif: #ffffff;
+
+  --accent: #c2185b;
+
+  /* Teinte de repli, utilisée par .est-masque et par toute forme hors cycle. */
+  --pays: #e7dcea;
+  --pays-survol: #cbb6d2;
+  --frontiere: #ffffff;
+  --opacite-masque: 0.3;
+  --trait-pays: 0.9px;
+  --trait-pastille: 2.4px;
+  --fond-pastille: #a074c4;
+  --contour-pastille: #ffffff;
+
+  /* Les sept teintes du patchwork. Désaturées et claires à dessein : elles
+     doivent porter la distinction entre voisins sans concurrencer les états. */
+  --teinte-1: #f9d5cd;   /* pêche       */
+  --teinte-2: #ded3f0;   /* lilas       */
+  --teinte-3: #cfe9dd;   /* menthe      */
+  --teinte-4: #f7e5c0;   /* blé         */
+  --teinte-5: #d2e2f2;   /* ciel        */
+  --teinte-6: #f6d3e2;   /* rose poudré */
+  --teinte-7: #dce6cd;   /* sauge       */
+
+  --juste: #07744c;
+  --faux: #c2185b;
+  /* Seule couleur qui n'est jamais du texte : elle ne sert qu'à remplir la
+     forme interrogée sur la carte, avec un contour blanc par-dessus. */
+  --interroge: #ef9d05;
+
+  --rayon: 16px;
+  --rayon-pastille: 999px;
+  --ombre: 0 2px 10px rgba(58, 44, 66, 0.09);
+  --ombre-flottante: 0 4px 14px rgba(7, 116, 76, 0.3);
+}

@@ -6,12 +6,19 @@
 <meta name="theme-color" content="#12161c">
 <meta name="description" content="Jeu de géographie : reconnaître les pays du monde sur la carte.">
 <title>GeoGayssr</title>
-<link rel="stylesheet" href="css/style.css" id="feuille-theme">
+<!-- Deux feuilles, deux rôles : base.css porte toute la mise en page et ne
+     change jamais ; la feuille de thème ne porte que des variables de couleur.
+     Changer de thème échange la seconde, donc rien ne bouge à l'écran. -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/theme-sombre.css" id="feuille-theme">
 <script>
   // Le thème est appliqué ici, avant le premier rendu : appliqué depuis main.js,
   // il produirait un passage visible par le thème par défaut au chargement.
   // Priorité : paramètre d'URL, puis dernier choix mémorisé, puis sombre.
-  window.THEMES = { sombre: 'css/style.css', sorbet: 'css/style-sorbet.css' };
+  window.THEMES = {
+    sombre: 'css/theme-sombre.css',
+    sorbet: 'css/theme-sorbet.css',
+  };
   (function () {
     var url = new URLSearchParams(location.search).get('theme');
     var memorise = null;
@@ -34,54 +41,85 @@
 <main>
 
   <section id="ecran-accueil" class="ecran est-actif">
-    <h1>GeoGayssr</h1>
+    <h1>Geo<span class="accent">Gay</span>ssr</h1>
+
+    <div class="options">
 
     <div class="groupe">
       <p class="intitule">Mode</p>
-      <label><input type="radio" name="mode" value="clic" checked> Cliquer le pays</label>
-      <label><input type="radio" name="mode" value="saisie"> Écrire son nom</label>
+      <div class="choix">
+        <label><input type="radio" name="mode" value="clic" checked> Cliquer le pays</label>
+        <label><input type="radio" name="mode" value="saisie"> Écrire son nom</label>
+      </div>
     </div>
 
     <div class="groupe">
-      <p class="intitule">Pays</p>
-      <label><input type="radio" name="perimetre" value="onu" checked> Les 197 de l'ONU</label>
-      <label><input type="radio" name="perimetre" value="units"> Tous les territoires</label>
-      <label><input type="radio" name="perimetre" value="subunits"> Territoires extrêmes</label>
+      <p class="intitule">Carte</p>
+      <div class="choix">
+        <label><input type="radio" name="perimetre" value="onu" checked> Les 197 de l'ONU</label>
+        <label><input type="radio" name="perimetre" value="units"> Tous les territoires (296)</label>
+        <label><input type="radio" name="perimetre" value="subunits"> Territoires extrêmes (358)</label>
+      </div>
     </div>
 
     <div class="groupe">
       <p class="intitule" id="titre-zone">Zone</p>
-      <select id="choix-zone" aria-labelledby="titre-zone">
-        <option value="">Monde entier</option>
-      </select>
+      <div class="choix">
+        <select id="choix-zone" aria-labelledby="titre-zone">
+          <option value="">Monde entier</option>
+        </select>
+      </div>
     </div>
 
     <div class="groupe">
-      <p class="intitule">Longueur</p>
-      <label><input type="radio" name="longueur" value="10" checked> 10 pays</label>
-      <label><input type="radio" name="longueur" value="20"> 20 pays</label>
-      <label><input type="radio" name="longueur" value=""> Tout</label>
+      <p class="intitule">Nombre de pays</p>
+      <div class="choix">
+        <label><input type="radio" name="longueur" value="nombre" checked> Rentrer une valeur</label>
+        <!-- Le maximum est posé par main.js d'après le nombre de pays réellement
+             jouables dans le périmètre et la zone choisis. -->
+        <input type="number" id="nombre-pays" class="champ-nombre" value="10"
+               min="1" step="1" inputmode="numeric" aria-label="Nombre de pays à deviner">
+        <label><input type="radio" name="longueur" value="tout"> Tous les pays</label>
+      </div>
     </div>
 
     <div class="groupe">
       <p class="intitule">En cas d'erreur</p>
-      <label><input type="radio" name="politique" value="une-chance" checked> Une seule chance</label>
-      <label><input type="radio" name="politique" value="rattrapage"> Le pays revient plus tard</label>
+      <div class="choix">
+        <label><input type="radio" name="politique" value="une-chance" checked> Une seule chance</label>
+        <label><input type="radio" name="politique" value="rattrapage"> Le pays revient plus tard</label>
+      </div>
     </div>
 
     <div class="groupe">
       <p class="intitule">Thème</p>
       <!-- L'option cochée est posée par main.js d'après le thème réellement appliqué. -->
-      <label><input type="radio" name="theme" value="sombre"> Sombre</label>
-      <label><input type="radio" name="theme" value="sorbet"> Sorbet</label>
+      <div class="choix">
+        <label><input type="radio" name="theme" value="sombre"> Sombre</label>
+        <label><input type="radio" name="theme" value="sorbet"> Sorbet</label>
+      </div>
     </div>
+
+    </div><!-- .options -->
 
     <p id="meilleur-score" hidden></p>
     <p id="erreur-chargement" class="retour est-faux" hidden></p>
 
-    <div class="groupe">
+    <div class="actions">
       <button type="button" id="bouton-jouer" class="bouton-principal">Jouer</button>
-      <button type="button" id="bouton-reviser" class="bouton-discret" hidden>Réviser mes erreurs</button>
+      <button type="button" id="bouton-voir-erreurs" class="bouton-discret" hidden>Voir mes erreurs</button>
+    </div>
+  </section>
+
+  <!-- Les pays déjà ratés, toutes parties confondues. C'est de là que part la
+       révision : on voit d'abord ce qu'on va réviser. -->
+  <section id="ecran-erreurs" class="ecran">
+    <h2>Mes erreurs</h2>
+    <p id="erreurs-resume"></p>
+    <ul id="liste-erreurs" class="liste-rates"></ul>
+    <div class="actions">
+      <button type="button" id="bouton-reviser" class="bouton-principal">Réviser mes erreurs</button>
+      <button type="button" id="bouton-retour-accueil" class="bouton-discret">Retour</button>
     </div>
   </section>
 
@@ -96,10 +134,11 @@
       <button type="button" id="bouton-valider" hidden>OK</button>
       <p id="retour" class="retour" role="status" aria-live="polite"></p>
       <p id="progression" class="progression"></p>
-      <button type="button" id="bouton-reset" class="bouton-discret">Recommencer</button>
-      <!-- Bouton sans texte visible : le libellé accessible est obligatoire. -->
-      <button type="button" id="bouton-quitter" class="bouton-discret"
-              aria-label="Quitter la partie et revenir à l'accueil" title="Quitter la partie">✕</button>
+      <!-- Boutons sans texte visible : le libellé accessible est obligatoire. -->
+      <button type="button" id="bouton-reset" class="bouton-discret bouton-icone"
+              aria-label="Recommencer la partie" title="Recommencer">🔄</button>
+      <button type="button" id="bouton-parametres" class="bouton-discret bouton-icone"
+              aria-label="Ouvrir les paramètres" title="Paramètres">⚙</button>
     </div>
 
     <div class="conteneur-carte">
@@ -107,12 +146,38 @@
     </div>
   </section>
 
+  <!-- Réglages accessibles sans quitter la partie. N'y figure que ce qui peut
+       changer en cours de route : modifier le mode ou le périmètre voudrait dire
+       relancer la partie, ce qui est justement le rôle du bouton « Quitter ». -->
+  <div id="panneau-parametres" class="panneau" hidden
+       role="dialog" aria-modal="true" aria-labelledby="titre-parametres">
+    <div class="panneau-boite">
+      <h2 id="titre-parametres">Paramètres</h2>
+
+      <div class="groupe">
+        <p class="intitule">Thème</p>
+        <label><input type="radio" name="theme-jeu" value="sombre"> Sombre</label>
+        <label><input type="radio" name="theme-jeu" value="sorbet"> Sorbet</label>
+      </div>
+
+      <div class="rangee">
+        <button type="button" id="bouton-reprendre" class="bouton-principal">Reprendre</button>
+        <button type="button" id="bouton-quitter" class="bouton-discret">Quitter la partie</button>
+      </div>
+    </div>
+  </div>
+
   <section id="ecran-fin" class="ecran">
     <h2>Partie terminée</h2>
     <p id="score-final" class="bilan"></p>
     <p id="message-final" class="message-fin"></p>
-    <ul id="liste-ratees" class="liste-rates"></ul>
-    <div class="groupe">
+    <!-- Masqué quand la partie est parfaite : un intitulé « Erreurs commises »
+         suivi du vide serait un reproche gratuit. -->
+    <div id="bloc-erreurs" class="bloc-erreurs" hidden>
+      <p class="intitule">Erreurs commises</p>
+      <ul id="liste-ratees" class="liste-rates"></ul>
+    </div>
+    <div class="actions">
       <button type="button" id="bouton-rejouer" class="bouton-principal">Rejouer</button>
       <button type="button" id="bouton-accueil" class="bouton-discret">Accueil</button>
     </div>

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "donnees": "node build/telecharger.cjs && node build/generer.cjs && node build/alias.mjs",
-    "verifier": "node build/verifier-partie.mjs && node build/verifier-saisie.mjs",
+    "verifier": "node build/verifier-partie.mjs && node build/verifier-stockage.mjs && node build/verifier-saisie.mjs && node build/verifier-themes.mjs",
     "servir": "python3 -m http.server 8000"
   },
   "keywords": [],

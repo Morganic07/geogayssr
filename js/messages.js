@@ -11,49 +11,49 @@ const PALIERS = [
   {
     seuil: 100,
     textes: [
-      'Sans faute.',
-      'Aucune erreur.',
-      'Parcours parfait.'
+      'Sans faute, bravo ma chérie.',
+      'Aucune erreur, je vais marier un robot ou une humaine wsh.',
+      'Parcours parfait, fait question pour un champion tu as tes chances'
     ]
   },
   {
     seuil: 90,
     textes: [
-      'Très belle partie.',
-      'Presque parfait.',
-      'Il ne manquait pas grand-chose.'
+      'Très belle partie, tu es ma petite championne.',
+      'Presque parfait mais au moins toi tu es parfaite.',
+      'Il ne manquait pas grand-chose, demande de l\'aide à la Grande Morgane.'
     ]
   },
   {
     seuil: 75,
     textes: [
-      'Belle partie.',
-      'Bon résultat.',
+      'Belle partie ma chérie, tu peux refaire pour te perfectionner.',
+      'Bon résultat, c\'est déjà pas mal.',
       'La carte commence à être connue.'
     ]
   },
   {
     seuil: 50,
     textes: [
-      'Plus de la moitié.',
-      'Résultat honorable.',
-      'Encore quelques régions à revoir.'
+      'Plus de la moitié. Il te manque l\'autre moitié lol. ',
+      'Résultat pas à ton niveau, refait et impresionne moi.',
+      'Tu peux faire mieux, je le sens je le sais je le suis'
     ]
   },
   {
     seuil: 25,
     textes: [
-      'Le début est là.',
-      'Il reste du terrain à couvrir.',
-      'Une partie de plus et ça progressera.'
+      'Eva wsh ? Progresser c\'est pas mal, mais faut s\'accrocher.',
+      'Il reste du terrain à couvrir, faut s\'accrocher.',
+      'Aller joue sérieusement, tu peux faire mieux.'
     ]
   },
   {
     seuil: 0,
     textes: [
-      'La prochaine sera meilleure.',
-      'Partie difficile.',
-      'À retenter.'
+      'Tu fais expres ou quoient.',
+      'Bah ma chérie ?? j\'ai vu mieux.',
+      'À retenter tu joues à quoi là ?'
     ]
   }
 ];

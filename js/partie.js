@@ -122,6 +122,15 @@ export function creerPartie({ entites, mode = 'clic', politique = 'une-chance', 
       return demarree && position >= file.length;
     },
 
+    // Devinées sans aide, au premier passage. Une entité rattrapée après avoir vu
+    // la solution n'en fait pas partie : elle n'a pas été devinée, elle a été
+    // montrée. C'est ce qui décide de la sortie de la liste des pays ratés.
+    entitesTrouvees() {
+      return [...resultats.entries()]
+        .filter(([, etat]) => etat === 'premier-coup')
+        .map(([id]) => id);
+    },
+
     // Sert à alimenter l'écran de fin et le compteur d'échecs persistant.
     entitesRatees() {
       return [...resultats.entries()]

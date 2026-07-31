@@ -8,8 +8,21 @@ const VERSION = 1;
 let progression = null;
 let ecritureEnAttente = false;
 
+// `echecs` compte les fois où un pays a été raté ; `oublis` la valeur qu'avait ce
+// compteur la dernière fois qu'une révision l'a fait tomber. Un pays est encore
+// à réviser tant que echecs > oublis. Deux compteurs qui ne font que croître
+// plutôt qu'une suppression : c'est ce qui permet de fusionner deux onglets par
+// le maximum sans qu'un pays effacé ici réapparaisse depuis l'autre.
 function progressionVide() {
-  return { version: VERSION, meilleurs: {}, echecs: {} };
+  return { version: VERSION, meilleurs: {}, echecs: {}, oublis: {} };
+}
+
+function resteARevoir(courante, id) {
+  const rates = courante.echecs[id];
+  if (typeof rates !== 'number' || rates <= 0) return 0;
+  const oublies = courante.oublis[id];
+  const net = rates - (typeof oublies === 'number' ? oublies : 0);
+  return net > 0 ? net : 0;
 }
 
 // L'accès même à la propriété localStorage peut lever (cookies bloqués, iframe
@@ -57,6 +70,9 @@ function analyser(brut) {
     version: VERSION,
     meilleurs: nettoyerCompteurs(donnees.meilleurs),
     echecs: nettoyerCompteurs(donnees.echecs),
+    // Absent des enregistrements antérieurs à la révision : un objet vide y
+    // convient, aucun pays n'y avait encore été oublié.
+    oublis: nettoyerCompteurs(donnees.oublis),
   };
 }
 
@@ -131,6 +147,7 @@ function absorberEcritureExterne(evenement) {
   if (!entrante) return;
   fusionnerCompteurs(progression.meilleurs, entrante.meilleurs);
   fusionnerCompteurs(progression.echecs, entrante.echecs);
+  fusionnerCompteurs(progression.oublis, entrante.oublis);
   // Pas de réécriture ici : le stockage porte déjà l'état du dernier écrivain,
   // la fusion sera persistée à la prochaine écriture naturelle.
 }
@@ -148,12 +165,20 @@ if (typeof globalThis.addEventListener === 'function') {
 
 export function chargerProgression() {
   const courante = etat();
+  // `echecs` est rendu net des oublis : c'est le nombre que l'interface affiche,
+  // et le seul qui ait un sens pour un appelant. La comptabilité interne à deux
+  // compteurs ne sort pas d'ici.
+  const echecs = {};
+  for (const id of Object.keys(courante.echecs)) {
+    const net = resteARevoir(courante, id);
+    if (net > 0) echecs[id] = net;
+  }
   // Copie : l'appelant ne doit pas pouvoir modifier l'état interne sans passer
   // par les fonctions d'écriture.
   return {
     version: courante.version,
     meilleurs: { ...courante.meilleurs },
-    echecs: { ...courante.echecs },
+    echecs,
   };
 }
 
@@ -175,12 +200,31 @@ export function enregistrerEchec(id) {
   planifierEcriture();
 }
 
+// Un pays deviné du premier coup pendant une révision sort de la liste : le
+// compteur d'oublis rattrape celui des échecs. S'il est encore raté, l'échec
+// enregistré fait aussitôt repasser echecs au-dessus, et il y revient.
+export function oublierEchec(id) {
+  if (typeof id !== 'string' || id === '') return;
+  const courante = etat();
+  const rates = courante.echecs[id];
+  if (typeof rates !== 'number' || rates <= 0) return;
+  const oublies = courante.oublis[id];
+  if (typeof oublies === 'number' && oublies >= rates) return;
+  courante.oublis[id] = rates;
+  planifierEcriture();
+}
+
 export function entitesLesPlusRatees(n) {
   if (typeof n !== 'number' || !Number.isFinite(n) || n < 1) return [];
-  const echecs = etat().echecs;
-  const ids = Object.keys(echecs).filter((id) => echecs[id] > 0);
+  const courante = etat();
+  const net = {};
+  for (const id of Object.keys(courante.echecs)) {
+    const reste = resteARevoir(courante, id);
+    if (reste > 0) net[id] = reste;
+  }
+  const ids = Object.keys(net);
   // Départage par identifiant pour que deux appels donnent le même ordre.
-  ids.sort((a, b) => echecs[b] - echecs[a] || (a < b ? -1 : a > b ? 1 : 0));
+  ids.sort((a, b) => net[b] - net[a] || (a < b ? -1 : a > b ? 1 : 0));
   return ids.slice(0, Math.floor(n));
 }
 
