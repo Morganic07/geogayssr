@@ -61,15 +61,16 @@ export function creerPartie({ entites, mode = 'clic', politique = 'une-chance', 
       };
     },
 
-    repondre(valeur) {
+    repondre(valeur, secondEssai = false) {
       const tour = tourCourant();
       if (!tour) return null;
 
       const correct = valeur != null && valeur === tour.id;
 
       if (correct) {
+        const duPremierCoup = !tour.estRattrapage && !secondEssai;
         if (!resultats.has(tour.id)) {
-          resultats.set(tour.id, tour.estRattrapage ? 'rattrapage' : 'premier-coup');
+          resultats.set(tour.id, duPremierCoup ? 'premier-coup' : 'rattrapage');
         } else {
           resultats.set(tour.id, 'rattrapage');
         }
@@ -85,6 +86,7 @@ export function creerPartie({ entites, mode = 'clic', politique = 'une-chance', 
         correct,
         attendu: tour.id,
         estRattrapage: tour.estRattrapage,
+        secondEssai,
       };
     },
 

@@ -134,6 +134,21 @@ function estFini(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+function centreSpherique(geometrie) {
+  const morceaux = polygones(geometrie);
+  if (morceaux.length === 0) return null;
+
+  let principal = null;
+  for (const poly of morceaux) {
+    const aire = Math.abs(d3.geoArea(poly));
+    if (!principal || aire > principal.aire) principal = { aire, poly };
+  }
+
+  const centre = d3.geoCentroid(principal.poly);
+  if (!centre || !centre.every(estFini)) return null;
+  return [Math.round(centre[0] * 100) / 100, Math.round(centre[1] * 100) / 100];
+}
+
 function ecart(a, b) {
   const dx = Math.max(a[0][0] - b[1][0], b[0][0] - a[1][0], 0);
   const dy = Math.max(a[0][1] - b[1][1], b[0][1] - a[1][1], 0);
@@ -288,6 +303,10 @@ function traiter(jeu, nomsOnu) {
       pastille: aireTotale < SEUIL_PASTILLE || !d,
       zone: [arr(bornes[0][0]), arr(bornes[0][1]), arr(bornes[1][0]), arr(bornes[1][1])],
     };
+
+    const centre = centreSpherique(source.geometry);
+    if (centre) entite.centre = centre;
+    else anomalies.push(`${p.SU_A3} (${p.NAME_FR}) : centre introuvable, pas d'indice de distance`);
 
     if (silhouette) {
       entite.forme = [

@@ -72,6 +72,28 @@ while (!p.estTerminee() && tours < 30) {
 v('un rattrapage ne compte pas comme deviné', p.entitesTrouvees().length === 0);
 v('ni comme raté', p.entitesRatees().length === 0);
 
+console.log('— second essai —');
+p = creerPartie({ entites: ENTITES, politique: 'une-chance' });
+p.demarrer();
+let id = p.questionCourante().id;
+p.repondre(id, true);
+v('réussite au second essai : pas un premier coup', p.score().premierCoup === 0);
+v('réussite au second essai : comptée au rattrapage', p.score().rattrapage === 1);
+v('réussite au second essai : pas un raté', p.score().rates === 0);
+v('réussite au second essai : hors de la liste des ratés', p.entitesRatees().length === 0);
+v('réussite au second essai : pas dans les trouvées du premier coup', p.entitesTrouvees().length === 0);
+
+p = creerPartie({ entites: ENTITES, politique: 'une-chance' });
+p.demarrer();
+id = p.questionCourante().id;
+v('le drapeau est renvoyé', p.repondre(id, true).secondEssai === true);
+
+p = creerPartie({ entites: ENTITES, politique: 'une-chance' });
+p.demarrer();
+id = p.questionCourante().id;
+p.repondre(id);
+v('sans second essai, le premier coup est préservé', p.score().premierCoup === 1);
+
 console.log('— filtres —');
 p = creerPartie({ entites: ENTITES, zone: 'Europe' }); p.demarrer();
 v('zone Europe = 2 questions', p.questionCourante().total === 2);

@@ -64,6 +64,17 @@ dix fois sa largeur à cause des DOM-TOM, ne garder que le plus gros amputerait 
 vide, et deux pays dont l'Alaska et le Svalbard faussaient la lecture sont traités par exception
 nommée.
 
+**Un indice au lieu d'un échec sec.** En mode « deviner la forme », une réponse fausse mais
+reconnue n'interrompt pas la question : elle affiche la distance et la direction qui séparent le
+pays proposé du bon, et laisse un second essai — « Non — Afghanistan : 12 500 km au nord-ouest.
+Encore un essai ». La bonne réponse n'est révélée qu'au second échec.
+
+Une réussite au second essai ne compte pas comme trouvée du premier coup : elle est rangée avec les
+rattrapages, donc le pourcentage de réussite garde le même sens qu'avant. La distance se mesure
+d'un centre à l'autre, ce qui surprend pour deux voisins le Cameroun et le Nigeria, frontaliers,
+sont donnés à 672 km. Les centres sont calculés à la fabrication sur le plus gros morceau de chaque
+pays, sans quoi celui de la France tomberait en mer au large de l'Espagne, tiré par les DOM-TOM.
+
 **Hors ONU, pour qui connaît déjà les 197.** La quatrième carte retire de la liste des 358 tout ce
 qui est déjà un pays de l'ONU, et ne pose que les 169 restants : Alaska, Açores, Svalbard,
 Somaliland, Zanzibar, Écosse, Kaliningrad. Les 197 pays restent **dessinés en fond**, atténués,
@@ -175,6 +186,7 @@ js/
  stockage.js      Meilleurs scores et pays ratés dans localStorage.
  messages.js      Les textes de fin de partie, par palier de score.
  forme.js        Dessine une silhouette isolée, cadrée sur elle-même. Ne sait rien du jeu.
+ geo.js         Distance et direction entre deux points du globe. Aucune dépendance.
  maj.js         Enregistre le service worker et propose la mise à jour quand elle est prête.
  main.js        Le câblage : écrans, chargement des données, boucle de jeu.
 data/          Généré, mais versionné voir plus bas.

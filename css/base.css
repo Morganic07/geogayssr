@@ -366,6 +366,10 @@ input::placeholder {
   color: var(--faux);
 }
 
+.retour.est-indice {
+  color: var(--interroge);
+}
+
 .barre .progression {
   position: relative;
   flex: 0 0 auto;
