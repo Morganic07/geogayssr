@@ -13,7 +13,8 @@ portrait, le jeu affiche une invitation à tourner le téléphone.
 ## Deux façons de jouer
 
 Mode 1 : Cliquer sur le pays
-Mode 2 : Ecrire le nom du pays 
+Mode 2 : Ecrire le nom du pays
+Mode 3 : Deviner la forme, silhouette seule, sans carte ni voisinage
 
 Un pays raté ne passe jamais au vert : la bonne réponse est bien montrée c'est un jeu pour
 apprendre mais dans la couleur de l'erreur.
@@ -22,7 +23,7 @@ apprendre mais dans la couleur de l'erreur.
 
 | Réglage | Choix |
 |---|---|
-| **Mode** | cliquer le pays, ou écrire son nom |
+| **Mode** | cliquer le pays · écrire son nom · deviner la forme |
 | **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) · hors ONU seulement (169) |
 | **Zone** | le monde entier, ou un continent |
 | **Nombre de pays** | une valeur libre, ou tous |
@@ -48,6 +49,20 @@ cliquable, avec une cible de 44 px de diamètre très au-dessus du disque réell
 mode saisie, la carte se recadre sur le pays demandé, à un facteur volontairement modéré : serré
 sur ses frontières, un pays n'est qu'une forme hors contexte, c'est le voisinage qui permet de le
 reconnaître.
+
+**Deviner la forme.** Le territoire est découpé de la carte et montré seul, centré, à une taille
+qui remplit l'écran : le Vatican et la Russie occupent la même place, la taille ne renseigne plus,
+seule la silhouette compte. La réponse s'écrit, avec la même tolérance orthographique que le mode
+saisie.
+
+Deux limites, assumées. Un contour de moins de 20 points n'est plus une forme mais un polygone
+informe : ces entités sont écartées du mode, ce qui laisse **164 formes sur la carte ONU**, 189 sur
+les territoires, 209 sur les extrêmes et 50 seulement en hors-ONU faite d'îlots, cette carte s'y
+prête mal. Et le cadrage doit choisir quels morceaux montrer : tout prendre étirerait la France sur
+dix fois sa largeur à cause des DOM-TOM, ne garder que le plus gros amputerait le Japon de Hokkaidō.
+`build/generer.cjs` agrège donc les morceaux proches du principal tant qu'ils ne creusent pas de
+vide, et deux pays dont l'Alaska et le Svalbard faussaient la lecture sont traités par exception
+nommée.
 
 **Hors ONU, pour qui connaît déjà les 197.** La quatrième carte retire de la liste des 358 tout ce
 qui est déjà un pays de l'ONU, et ne pose que les 169 restants : Alaska, Açores, Svalbard,
@@ -159,10 +174,11 @@ js/
  saisie.js       Normalisation, distance d'édition, résolution d'un texte vers un pays.
  stockage.js      Meilleurs scores et pays ratés dans localStorage.
  messages.js      Les textes de fin de partie, par palier de score.
+ forme.js        Dessine une silhouette isolée, cadrée sur elle-même. Ne sait rien du jeu.
  maj.js         Enregistre le service worker et propose la mise à jour quand elle est prête.
  main.js        Le câblage : écrans, chargement des données, boucle de jeu.
 data/          Généré, mais versionné voir plus bas.
- carte-onu.json    197 pays, contours projetés prêts à dessiner.
+ carte-onu.json    197 pays, contours projetés prêts à dessiner, cadrage des silhouettes.
  carte-units.json   296 territoires.
  carte-subunits.json  358 territoires, dont 169 marqués hors ONU.
  alias.json      906 formes acceptées à la saisie, pour 395 entités.

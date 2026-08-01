@@ -1,4 +1,5 @@
 import { creerCarte } from './carte.js';
+import { creerSilhouette } from './forme.js';
 import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
 import { messagePourScore } from './messages.js';
@@ -35,6 +36,8 @@ const vuesPerimetre = new Map();
 let alias = null;
 
 let carte = null;
+let silhouette = null;
+let vueCourante = null;
 let partie = null;
 const resolveurs = new Map();
 let resolveurCourant = null;
@@ -100,7 +103,19 @@ async function chargerPerimetre(nom) {
 }
 
 function estJouable(vue, id) {
-  return vue.jouables ? vue.jouables.has(id) : vue.parId.has(id);
+  if (vue.jouables ? !vue.jouables.has(id) : !vue.parId.has(id)) return false;
+  if (lireOptions().mode !== 'forme') return true;
+  const entite = vue.parId.get(id);
+  return !!(entite && entite.forme);
+}
+
+function basculerSvg(element, visible) {
+  if (visible) element.removeAttribute('hidden');
+  else element.setAttribute('hidden', '');
+}
+
+function entitesJouables(vue, mode) {
+  return mode === 'forme' ? vue.entites.filter((e) => e.forme) : vue.entites;
 }
 
 
@@ -124,13 +139,14 @@ function lireOptions() {
 }
 
 function rafraichirMaxPays() {
-  const { perimetre, zone } = lireOptions();
+  const { perimetre, zone, mode } = lireOptions();
   const donnees = vuesPerimetre.get(perimetre);
   const champ = $('#nombre-pays');
   if (!donnees) return;
+  const disponibles = entitesJouables(donnees, mode);
   const total = zone
-    ? donnees.entites.filter((e) => e.continent === zone).length
-    : donnees.entites.length;
+    ? disponibles.filter((e) => e.continent === zone).length
+    : disponibles.length;
   champ.max = String(total);
   champ.title = `Entre 1 et ${total}`;
   if (Number(champ.value) > total) champ.value = String(total);
@@ -155,7 +171,7 @@ async function rafraichirZones() {
     signalerErreur(e);
     return;
   }
-  const presents = [...new Set(donnees.entites.map((e) => e.continent))];
+  const presents = [...new Set(entitesJouables(donnees, lireOptions().mode).map((e) => e.continent))];
   select.innerHTML = '<option value="">Monde entier</option>';
   for (const [cle, libelle] of Object.entries(CONTINENTS)) {
     if (!presents.includes(cle)) continue;
@@ -240,25 +256,45 @@ function signalerErreur(e) {
 
 async function demarrerPartie(options, entitesImposees = null) {
   const donnees = await chargerPerimetre(options.perimetre);
+  vueCourante = donnees;
 
-  if (perimetreCharge !== options.perimetre) {
+  const estForme = options.mode === 'forme';
+  const disponibles = entitesJouables(donnees, options.mode);
+
+  if (estForme) {
     if (carte) carte.detruire();
-    carte = creerCarte($('#carte'), donnees.fond, donnees.jouables);
-    carte.dessiner();
-    carte.surClicEntite(surClicCarte);
-    perimetreCharge = options.perimetre;
+    carte = null;
+    perimetreCharge = null;
+    if (!silhouette) silhouette = creerSilhouette($('#silhouette'));
   } else {
-    carte.reinitialiserEtats();
+    if (silhouette) {
+      silhouette.detruire();
+      silhouette = null;
+    }
+    if (perimetreCharge !== options.perimetre) {
+      if (carte) carte.detruire();
+      carte = creerCarte($('#carte'), donnees.fond, donnees.jouables);
+      carte.dessiner();
+      carte.surClicEntite(surClicCarte);
+      perimetreCharge = options.perimetre;
+    } else {
+      carte.reinitialiserEtats();
+    }
   }
+  basculerSvg($('#carte'), !estForme);
+  basculerSvg($('#silhouette'), estForme);
+
   const zone = entitesImposees ? null : options.zone;
-  carte.filtrerContinent(zone);
+  if (carte) carte.filtrerContinent(zone);
 
   const entites = entitesImposees
-    ? donnees.entites.filter((e) => entitesImposees.includes(e.id))
-    : donnees.entites;
+    ? disponibles.filter((e) => entitesImposees.includes(e.id))
+    : disponibles;
 
   if (entites.length === 0) {
-    throw new Error('aucun pays à réviser dans ce périmètre');
+    throw new Error(estForme
+      ? 'aucune forme reconnaissable dans cette sélection'
+      : 'aucun pays à réviser dans ce périmètre');
   }
 
   partie = creerPartie({
@@ -275,13 +311,13 @@ async function demarrerPartie(options, entitesImposees = null) {
     cle: entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options),
   };
 
-  const estSaisie = options.mode === 'saisie';
-  if (estSaisie && !resolveurs.has(donnees.fichier)) {
+  const parEcrit = options.mode === 'saisie' || estForme;
+  if (parEcrit && !resolveurs.has(donnees.fichier)) {
     resolveurs.set(donnees.fichier, creerResolveur(donnees.fond.entites, alias));
   }
-  resolveurCourant = estSaisie ? resolveurs.get(donnees.fichier) : null;
-  $('#champ-reponse').hidden = !estSaisie;
-  $('#bouton-valider').hidden = !estSaisie;
+  resolveurCourant = parEcrit ? resolveurs.get(donnees.fichier) : null;
+  $('#champ-reponse').hidden = !parEcrit;
+  $('#bouton-valider').hidden = !parEcrit;
 
   afficherEcran('ecran-jeu');
   enAttente = false;
@@ -302,14 +338,20 @@ function poserQuestion() {
 
   if (partie.mode === 'clic') {
     $('#consigne').textContent = question.fr;
+    return;
+  }
+
+  if (partie.mode === 'forme') {
+    $('#consigne').textContent = 'Quel est ce territoire ?';
+    silhouette.dessiner(vueCourante.parId.get(question.id));
   } else {
     $('#consigne').textContent = 'Quel est ce pays ?';
     carte.definirEtat(question.id, 'interroge');
     carte.zoomerSur(question.id);
-    const champ = $('#champ-reponse');
-    champ.value = '';
-    champ.focus();
   }
+  const champ = $('#champ-reponse');
+  champ.value = '';
+  champ.focus();
 }
 
 function surClicCarte(id) {
@@ -317,7 +359,8 @@ function surClicCarte(id) {
 }
 
 function validerSaisie() {
-  if (!partie || partie.mode !== 'saisie' || enAttente) return;
+  if (!partie || enAttente) return;
+  if (partie.mode !== 'saisie' && partie.mode !== 'forme') return;
   const texte = $('#champ-reponse').value.trim();
   if (!texte) return;
   if (!resolveurCourant) return;
@@ -333,12 +376,17 @@ function traiterReponse(idPropose) {
   const resultat = partie.repondre(idPropose);
   const retour = $('#retour');
 
+  const marquer = (etat) => {
+    if (partie.mode === 'forme') silhouette.definirEtat(etat);
+    else carte.definirEtat(question.id, etat);
+  };
+
   if (resultat.correct) {
-    carte.definirEtat(question.id, 'juste');
+    marquer('juste');
     retour.textContent = 'Juste';
     retour.className = 'retour est-juste';
   } else {
-    carte.definirEtat(question.id, 'faux');
+    marquer('faux');
     if (partie.mode === 'clic') {
       carte.memoriserVue();
       carte.zoomerSur(question.id);
@@ -352,7 +400,7 @@ function traiterReponse(idPropose) {
   minuterie = setTimeout(() => {
     enAttente = false;
     if (partie.politique === 'rattrapage' && !resultat.correct) {
-      carte.definirEtat(question.id, 'neutre');
+      marquer('neutre');
     }
     if (!resultat.correct && partie.mode === 'clic') {
       carte.restaurerVue();
@@ -529,7 +577,10 @@ for (const champ of document.querySelectorAll(CHAMPS_THEME)) {
 for (const champ of document.querySelectorAll('input[name="perimetre"]')) {
   champ.addEventListener('change', rafraichirZones);
 }
-for (const nom of ['mode', 'longueur', 'politique']) {
+for (const champ of document.querySelectorAll('input[name="mode"]')) {
+  champ.addEventListener('change', rafraichirZones);
+}
+for (const nom of ['longueur', 'politique']) {
   for (const champ of document.querySelectorAll(`input[name="${nom}"]`)) {
     champ.addEventListener('change', () => {
       rafraichirChampNombre();

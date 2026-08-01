@@ -12,6 +12,11 @@ const LARGEUR = 2000;
 const DECIMALES = 1;
 const SEUIL_PASTILLE = 12;
 const SEUIL_SIMPLIF = 0.005;
+const PORTEE_SILHOUETTE = 0.9;
+const PORTEE_MINI = 8;
+const POINTS_SILHOUETTE = 20;
+const AIRE_RELATIVE_MINI = 0.01;
+const REMPLISSAGE_MINI = 0.06;
 
 const EXCLUES = new Set([
   'KNX', 'KNZ',
@@ -52,6 +57,8 @@ const JEUX = [
 ];
 
 const CORPS_ONU = new Set(['RUA', 'RUE']);
+
+const SILHOUETTE_MORCEAU_SEUL = new Set(['USA', 'NOR']);
 
 function codesPossibles(p) {
   return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3, p.SU_A3].filter((c) => c && c !== '-99');
@@ -127,6 +134,78 @@ function estFini(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+function ecart(a, b) {
+  const dx = Math.max(a[0][0] - b[1][0], b[0][0] - a[1][0], 0);
+  const dy = Math.max(a[0][1] - b[1][1], b[0][1] - a[1][1], 0);
+  return Math.hypot(dx, dy);
+}
+
+function fusionner(a, b) {
+  return [
+    [Math.min(a[0][0], b[0][0]), Math.min(a[0][1], b[0][1])],
+    [Math.max(a[1][0], b[1][0]), Math.max(a[1][1], b[1][1])],
+  ];
+}
+
+function morceauxDessines(d) {
+  const morceaux = [];
+  for (const bloc of d.split('M')) {
+    if (!bloc) continue;
+    const points = [];
+    const re = /(-?[\d.]+),(-?[\d.]+)/g;
+    let m;
+    while ((m = re.exec(bloc))) points.push([Number(m[1]), Number(m[2])]);
+    if (points.length < 3) continue;
+
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, double = 0;
+    for (let i = 0; i < points.length; i++) {
+      const [x, y] = points[i];
+      if (x < x0) x0 = x;
+      if (y < y0) y0 = y;
+      if (x > x1) x1 = x;
+      if (y > y1) y1 = y;
+      const [xs, ys] = points[(i + 1) % points.length];
+      double += x * ys - xs * y;
+    }
+    morceaux.push({ bornes: [[x0, y0], [x1, y1]], aire: Math.abs(double) / 2 });
+  }
+  return morceaux;
+}
+
+function cadreSilhouette(d, id) {
+  const tous = morceauxDessines(d).sort((a, b) => b.aire - a.aire);
+  if (tous.length === 0) return null;
+  if (SILHOUETTE_MORCEAU_SEUL.has(id)) return tous[0].bornes;
+
+  const seuil = tous[0].aire * AIRE_RELATIVE_MINI;
+  const morceaux = tous.filter((m) => m.aire >= seuil);
+
+  const surface = (c) => Math.max(c[1][0] - c[0][0], 1) * Math.max(c[1][1] - c[0][1], 1);
+
+  let cadre = morceaux[0].bornes;
+  let aireRetenue = morceaux[0].aire;
+  const pris = new Set([0]);
+  let ajout = true;
+
+  while (ajout) {
+    ajout = false;
+    const taille = Math.max(cadre[1][0] - cadre[0][0], cadre[1][1] - cadre[0][1]);
+    const portee = Math.max(taille * PORTEE_SILHOUETTE, PORTEE_MINI);
+    for (let i = 1; i < morceaux.length; i++) {
+      if (pris.has(i)) continue;
+      if (ecart(cadre, morceaux[i].bornes) > portee) continue;
+      const candidat = fusionner(cadre, morceaux[i].bornes);
+      const remplissage = (aireRetenue + morceaux[i].aire) / surface(candidat);
+      if (remplissage < REMPLISSAGE_MINI && surface(candidat) > surface(cadre) * 1.2) continue;
+      cadre = candidat;
+      aireRetenue += morceaux[i].aire;
+      pris.add(i);
+      ajout = true;
+    }
+  }
+  return cadre;
+}
+
 function traiter(jeu, nomsOnu) {
   const brut = JSON.parse(
     fs.readFileSync(path.join(CACHE, jeu.fichier + '.geojson'), 'utf8')
@@ -195,7 +274,10 @@ function traiter(jeu, nomsOnu) {
 
     const correction = CORRECTIONS[p.SU_A3] || {};
 
-    entites.push({
+    const points = d ? (d.match(/[ML]/g) || []).length : 0;
+    const silhouette = points >= POINTS_SILHOUETTE ? cadreSilhouette(d, p.SU_A3) : null;
+
+    const entite = {
       id: p.SU_A3,
       fr: correction.fr || p.NAME_FR,
       en: correction.en || p.NAME_EN,
@@ -205,7 +287,16 @@ function traiter(jeu, nomsOnu) {
       aire: arr(aireTotale),
       pastille: aireTotale < SEUIL_PASTILLE || !d,
       zone: [arr(bornes[0][0]), arr(bornes[0][1]), arr(bornes[1][0]), arr(bornes[1][1])],
-    });
+    };
+
+    if (silhouette) {
+      entite.forme = [
+        arr(silhouette[0][0]), arr(silhouette[0][1]),
+        arr(silhouette[1][0]), arr(silhouette[1][1]),
+      ];
+    }
+
+    entites.push(entite);
   }
 
   let horsOnu = 0;

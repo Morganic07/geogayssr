@@ -85,6 +85,7 @@ const leve = (fn) => { try { fn(); return false; } catch { return true; } };
 v('entités vides rejetées', leve(() => creerPartie({ entites: [] })));
 v('zone inexistante rejetée', leve(() => creerPartie({ entites: ENTITES, zone: 'Mars' })));
 v('mode inconnu rejeté', leve(() => creerPartie({ entites: ENTITES, mode: 'x' })));
+v('mode forme accepté', !leve(() => creerPartie({ entites: ENTITES, mode: 'forme' })));
 v('politique inconnue rejetée', leve(() => creerPartie({ entites: ENTITES, politique: 'x' })));
 
 console.log(`\n${ok} réussis, ${ko} échoués`);
