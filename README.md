@@ -6,9 +6,11 @@ Site statique, sans backend ni framework. Le jeu livré ne charge **aucune bibli
 travail géographique est payé une fois, à la fabrication des données, sur la machine de
 développement.
 
-**Orientation paysage obligatoire.** C'est la contrainte qui structure toute la mise en page : une
-carte du monde utilisable au pouce, zoomable jusqu'aux micro-États, dans un écran horizontal. En
-portrait, le jeu affiche une invitation à tourner le téléphone.
+**Les deux orientations.** Le paysage donne la plus grande carte, mais le clavier y mange l'écran
+dès qu'il faut écrire : le jeu fonctionne donc aussi en portrait, et suit l'orientation de
+l'appareil sans rien imposer. À la bascule, **le cadrage est conservé** — même échelle, même centre
+—, de sorte qu'un pays zoomé le reste après rotation. Seule exception, la vue d'ensemble : elle
+reste une vue d'ensemble plutôt que de se retrouver amputée de moitié.
 
 ## Deux façons de jouer
 
@@ -115,8 +117,7 @@ Russie, seules à porter un nom dérivé plutôt qu'identique, sont écartées �
 **Jouable hors ligne, et installable.** Un service worker met les 2 Mo du jeu en cache à la
 première visite les quatre cartes, les noms, le code, les icônes. Ensuite tout fonctionne sans
 réseau, y compris en avion. Le manifeste permet d'ajouter le jeu à l'écran d'accueil : il se lance
-alors en plein écran, sans barre d'URL, et **l'orientation paysage est imposée par le système**
-l'écran « Tourne ton téléphone » ne s'affiche plus.
+alors en plein écran, sans barre d'URL, dans l'orientation que l'on veut.
 
 **Les mises à jour ne demandent aucune discipline.** Le nom du cache contient une empreinte du
 contenu réel de tous les fichiers livrés, calculée par `build/generer-sw.cjs`. Changer une
@@ -197,7 +198,7 @@ la machine : `git pull`, puis `npm run sw`, puis commiter et pousser le `sw.js` 
 index.html       La structure : les emplacements, aucun style, aucune règle de jeu.
 sw.js          Généré. Service worker : met tout en cache, sert hors ligne, bascule
             de cache à chaque nouvelle empreinte. Ne pas éditer VERSION ni RESSOURCES.
-manifest.webmanifest Nom, icônes, plein écran et orientation paysage à l'installation.
+manifest.webmanifest Nom, icônes et plein écran à l'installation. N'impose aucune orientation.
 icones/         Le globe de l'application, en 180, 192 et 512 px.
 css/
  base.css       Toute la mise en page, plus six constantes. Ne change jamais de thème.

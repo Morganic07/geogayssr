@@ -94,8 +94,10 @@ try {
 }
 
 if (manifeste) {
-  constate(manifeste.orientation === 'landscape',
-    `orientation : ${manifeste.orientation} (attendu landscape)`);
+  constate(!('orientation' in manifeste),
+    'orientation' in manifeste
+      ? `orientation imposée (${manifeste.orientation}) : le jeu accepte pourtant le portrait`
+      : 'aucune orientation imposée, le jeu suit celle de l\'appareil');
   constate(manifeste.display === 'standalone', `affichage : ${manifeste.display}`);
   constate(manifeste.start_url === '.' && manifeste.scope === '.',
     'start_url et scope relatifs, donc valides sous un sous-chemin GitHub Pages');
