@@ -1,4 +1,4 @@
-const VERSION = '62ff850458c0';
+const VERSION = '9c244f06e66b';
 const CACHE = `geogayssr-${VERSION}`;
 
 const RESSOURCES = [
@@ -15,6 +15,7 @@ const RESSOURCES = [
   'icones/icone-512.png',
   'index.html',
   'js/carte.js',
+  'js/forme.js',
   'js/main.js',
   'js/maj.js',
   'js/messages.js',

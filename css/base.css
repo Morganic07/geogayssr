@@ -415,6 +415,10 @@ input::placeholder {
   background: var(--fond-carte);
 }
 
+.ecran svg[hidden] {
+  display: none;
+}
+
 .pays,
 .pastille {
   fill: var(--pays);
@@ -465,6 +469,23 @@ input::placeholder {
 .pastille.est-faux {
   fill: var(--faux);
   stroke: var(--texte-sur-vif);
+}
+
+.silhouette {
+  fill: var(--pays);
+  stroke: var(--frontiere);
+  stroke-width: var(--trait-pays);
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  transition: fill var(--duree) ease-out;
+}
+
+.silhouette.est-juste {
+  fill: var(--juste);
+}
+
+.silhouette.est-faux {
+  fill: var(--faux);
 }
 
 .pays.est-masque,
