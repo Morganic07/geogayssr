@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#12161c">
 <meta name="description" content="Jeu de géographie : reconnaître les pays du monde sur la carte.">
 <title>GeoGayssr</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icones/icone-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/theme-sombre.css">
 <link rel="stylesheet" href="css/theme-sorbet.css" data-theme="sorbet">
@@ -101,6 +106,10 @@
 
     <p id="meilleur-score" hidden></p>
     <p id="erreur-chargement" class="retour est-faux" hidden></p>
+    <p id="maj-disponible" class="retour" hidden>
+      Une nouvelle version est prête.
+      <button type="button" id="bouton-maj" class="bouton-discret">Mettre à jour</button>
+    </p>
 
     <div class="actions">
       <button type="button" id="bouton-jouer" class="bouton-principal">Jouer</button>

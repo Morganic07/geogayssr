@@ -2,6 +2,7 @@ import { creerCarte } from './carte.js';
 import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
 import { messagePourScore } from './messages.js';
+import { activerHorsLigne } from './maj.js';
 import {
   chargerProgression, enregistrerScore, enregistrerEchec, oublierEchec,
   entitesLesPlusRatees,
@@ -550,3 +551,4 @@ $('#choix-zone').addEventListener('change', () => {
 rafraichirChampNombre();
 rafraichirZones();
 rafraichirBoutonErreurs();
+activerHorsLigne();
