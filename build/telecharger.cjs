@@ -9,6 +9,7 @@ const JEUX = [
   'ne_10m_admin_0_countries',
   'ne_10m_admin_0_map_units',
   'ne_10m_admin_0_map_subunits',
+  'ne_10m_populated_places',
 ];
 
 function telecharger(nom) {

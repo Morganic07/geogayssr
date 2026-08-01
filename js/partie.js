@@ -11,7 +11,7 @@ export function creerPartie({ entites, mode = 'clic', politique = 'une-chance', 
   if (!Array.isArray(entites) || entites.length === 0) {
     throw new Error('creerPartie : aucune entité fournie');
   }
-  if (mode !== 'clic' && mode !== 'saisie' && mode !== 'forme') {
+  if (!['clic', 'saisie', 'forme', 'capitale'].includes(mode)) {
     throw new Error(`creerPartie : mode inconnu « ${mode} »`);
   }
   if (politique !== 'une-chance' && politique !== 'rattrapage') {

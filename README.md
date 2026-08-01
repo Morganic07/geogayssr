@@ -15,6 +15,7 @@ portrait, le jeu affiche une invitation à tourner le téléphone.
 Mode 1 : Cliquer sur le pays
 Mode 2 : Ecrire le nom du pays
 Mode 3 : Deviner la forme, silhouette seule, sans carte ni voisinage
+Mode 4 : Deviner la capitale, le pays est montré et nommé, un point marque la ville
 
 Un pays raté ne passe jamais au vert : la bonne réponse est bien montrée c'est un jeu pour
 apprendre mais dans la couleur de l'erreur.
@@ -23,7 +24,7 @@ apprendre mais dans la couleur de l'erreur.
 
 | Réglage | Choix |
 |---|---|
-| **Mode** | cliquer le pays · écrire son nom · deviner la forme |
+| **Mode** | cliquer le pays · écrire son nom · deviner la forme · deviner la capitale |
 | **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) · hors ONU seulement (169) |
 | **Zone** | le monde entier, ou un continent |
 | **Nombre de pays** | une valeur libre, ou tous |
@@ -63,6 +64,29 @@ dix fois sa largeur à cause des DOM-TOM, ne garder que le plus gros amputerait 
 `build/generer.cjs` agrège donc les morceaux proches du principal tant qu'ils ne creusent pas de
 vide, et deux pays dont l'Alaska et le Svalbard faussaient la lecture sont traités par exception
 nommée.
+
+**Deviner la capitale.** La carte se recadre sur le pays, ses voisins restent visibles, un point
+marque la capitale et la consigne nomme le pays « Quelle est la capitale de la Mongolie ? ». Le
+nom anglais est accepté au même titre que le français : « Beijing » vaut Pékin. **192 pays sur
+197** sont posés Chypre, Nauru, les Îles Cook, Niue et la Palestine n'ont pas de capitale
+exploitable dans la source.
+
+Ce mode ne fonctionne que sur la carte des 197 : les territoires n'ont pas de capitale d'État, et
+attribuer à un territoire celle qu'il contient donnerait « la capitale de Honshū » ou « de Bioko ».
+Le choisir bascule donc la carte sur ONU et grise les trois autres, avec une infobulle qui dit
+pourquoi.
+
+Seize pays ont plusieurs capitales, et **aucun critère automatique ne permet de trancher** : le
+plus peuplé donnerait Johannesbourg pour l'Afrique du Sud et Lagos pour le Nigeria, quand le
+marqueur « alt » de la source classe Dodoma, capitale officielle de la Tanzanie, comme secondaire.
+La table `CAPITALES_MULTIPLES` de `build/generer.cjs` fixe donc la capitale montrée et les réponses
+également acceptées Pretoria avec Le Cap et Bloemfontein, Sucre avec La Paz, Amsterdam avec
+La Haye. C'est le seul endroit à modifier pour changer un arbitrage.
+
+**Les erreurs sont rangées à part** selon qu'elles portent sur un pays ou sur une capitale : rater
+la position de la Bolivie et rater sa capitale sont deux choses différentes, et la révision ne les
+mélange pas. La liste des erreurs de capitales affiche la réponse à côté du pays, « Bolivie
+Sucre », ce qui en fait un aide-mémoire consultable.
 
 **Un indice au lieu d'un échec sec.** En mode « deviner la forme », une réponse fausse mais
 reconnue n'interrompt pas la question : elle affiche la distance et la direction qui séparent le
@@ -205,7 +229,9 @@ d'un coup à la première visite, pour que les quatre cartes soient disponibles 
 
 ```
 build/
- telecharger.cjs    Récupère les jeux Natural Earth v5 (domaine public) dans build/cache/.
+ telecharger.cjs    Récupère les jeux Natural Earth v5 (domaine public) dans build/cache/ :
+            trois jeux de frontières et les villes, dont les capitales. 19 Mo pour
+            ce dernier, mais rien n'en part sur le téléphone hors nom et position.
  generer.cjs      Projette la Terre, simplifie les frontières, corrige les noms français
             fautifs de la source, marque le hors-ONU, produit les data/carte-*.json.
  alias.mjs       Produit data/alias.json, et refuse d'écrire en cas de collision.

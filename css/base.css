@@ -209,6 +209,11 @@ label > input[type="radio"] {
   white-space: nowrap;
 }
 
+label:has(input:disabled) {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
 label:has(input:checked) {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 20%, var(--fond-barre));
@@ -473,6 +478,13 @@ input::placeholder {
 .pastille.est-faux {
   fill: var(--faux);
   stroke: var(--texte-sur-vif);
+}
+
+.capitale {
+  fill: var(--texte-sur-vif);
+  stroke: var(--pays);
+  stroke-width: var(--trait-pastille);
+  vector-effect: non-scaling-stroke;
 }
 
 .silhouette {
