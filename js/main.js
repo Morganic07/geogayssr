@@ -1,5 +1,6 @@
 import { creerCarte } from './carte.js';
 import { creerSilhouette } from './forme.js';
+import { indiceEcart } from './geo.js';
 import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
 import { messagePourScore } from './messages.js';
@@ -44,6 +45,7 @@ let resolveurCourant = null;
 let perimetreCharge = null;
 let manche = null;
 let enAttente = false;
+let secondEssai = false;
 let minuterie = 0;
 
 
@@ -321,12 +323,15 @@ async function demarrerPartie(options, entitesImposees = null) {
 
   afficherEcran('ecran-jeu');
   enAttente = false;
+  secondEssai = false;
   poserQuestion();
 }
 
 function poserQuestion() {
   const question = partie.questionCourante();
   if (!question) return terminerPartie();
+
+  secondEssai = false;
 
   $('#progression').textContent = `${question.index} / ${question.total}`;
   $('#progression').style.setProperty(
@@ -368,12 +373,37 @@ function validerSaisie() {
   traiterReponse(trouve ? trouve.id : null);
 }
 
+function offrirSecondEssai(question, idPropose) {
+  const retour = $('#retour');
+  secondEssai = true;
+
+  const attendue = vueCourante.parId.get(question.id);
+  const proposee = idPropose ? vueCourante.parId.get(idPropose) : null;
+  const ecart = proposee && attendue
+    ? indiceEcart(proposee.centre, attendue.centre)
+    : null;
+
+  retour.textContent = ecart
+    ? `Non — ${proposee.fr} : ${ecart}. Encore un essai`
+    : 'Non reconnu. Encore un essai';
+  retour.className = 'retour est-indice';
+
+  const champ = $('#champ-reponse');
+  champ.value = '';
+  champ.focus();
+}
+
 function traiterReponse(idPropose) {
   const question = partie.questionCourante();
   if (!question) return;
 
+  if (partie.mode === 'forme' && !secondEssai && idPropose !== question.id) {
+    offrirSecondEssai(question, idPropose);
+    return;
+  }
+
   enAttente = true;
-  const resultat = partie.repondre(idPropose);
+  const resultat = partie.repondre(idPropose, secondEssai);
   const retour = $('#retour');
 
   const marquer = (etat) => {

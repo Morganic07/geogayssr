@@ -1,4 +1,4 @@
-const VERSION = '5dc4a06b284a';
+const VERSION = '7c4f8a9a78dd';
 const CACHE = `geogayssr-${VERSION}`;
 
 const RESSOURCES = [
@@ -16,6 +16,7 @@ const RESSOURCES = [
   'index.html',
   'js/carte.js',
   'js/forme.js',
+  'js/geo.js',
   'js/main.js',
   'js/maj.js',
   'js/messages.js',
