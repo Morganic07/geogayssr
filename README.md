@@ -96,6 +96,49 @@ raté, il y reste.
 changer de thème ou de quitter, sans perdre l'écran de jeu.
 
 
+## Publier une mise à jour
+
+Le jeu s'installe sur le téléphone et continue de fonctionner sans réseau. La contrepartie :
+chaque appareil garde la version qu'il a téléchargée, et il faut lui signaler qu'une nouvelle
+existe. Ce signal, c'est `sw.js` : il contient la liste des fichiers du jeu et une empreinte de
+leur contenu. Tant que cette empreinte ne change pas, les appareils considèrent qu'ils sont à
+jour et ne retéléchargent rien.
+
+**La règle tient en une phrase : après toute modification, lancer `npm run sw`.**
+
+Le déroulé complet, dans l'ordre :
+
+| | Commande | Ce qu'elle fait |
+|---|---|---|
+| 1 | *(modifier le code, le style, les données ou les textes)* | |
+| 2 | `npm run sw` | met à jour la liste des fichiers et l'empreinte dans `sw.js` |
+| 3 | `npm run verifier` | refuse de passer si l'étape 2 a été oubliée |
+| 4 | `git commit` puis `git push` | **en incluant `sw.js`** dans le commit |
+
+GitHub Pages republie alors le site. Sur chaque téléphone, au lancement suivant du jeu et à
+condition d'avoir du réseau, la nouvelle version se télécharge en arrière-plan, puis l'accueil
+affiche « Une nouvelle version est prête ». Rien à désinstaller, rien à réinstaller.
+
+Régénérer les données par `npm run donnees` lance déjà `npm run sw` à la fin : dans ce cas,
+l'étape 2 est faite.
+
+### Si l'étape 2 est oubliée
+
+Rien de visible ne casse, et c'est bien le danger. En ligne, le jeu continue de fonctionner
+normalement, parce que ce qui n'est pas en cache est simplement demandé au réseau. Hors ligne en
+revanche, les appareils servent l'ancienne version indéfiniment, et un fichier nouvellement
+ajouté est purement absent le mode de jeu qui en dépend ne se lance pas. Aucun message
+n'apparaît, ni sur le téléphone ni au moment de pousser : `npm run verifier` est le seul endroit
+où l'oubli est signalé.
+
+### Le cas de l'édition depuis le site de GitHub
+
+Modifier un fichier directement dans l'interface web de GitHub ne permet pas de lancer
+`npm run sw`. Le changement est bien publié en ligne, mais **les appareils qui ont installé le
+jeu n'en verront jamais rien**. Pour une modification faite de cette façon, il faut repasser par
+la machine : `git pull`, puis `npm run sw`, puis commiter et pousser le `sw.js` régénéré.
+
+
 ## Arborescence
 
 ### Ce qui part sur le téléphone
