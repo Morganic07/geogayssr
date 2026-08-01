@@ -64,10 +64,14 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
   let observateur = null;
 
 
-  function recalculerBase() {
+  function recalculerBase(largeurPrecedente) {
     const centreX = vue.x + vue.l / 2;
     const centreY = vue.y + vue.h / 2;
     const zoomCourant = vue.l > 0 ? base.l / vue.l : 1;
+    const enVueComplete = zoomCourant <= 1.001;
+    const memeEchelle = largeurPrecedente > 1 && vue.l > 0
+      ? vue.l * (cadre.largeur / largeurPrecedente)
+      : 0;
 
     const ratioVue = cadre.largeur / cadre.hauteur;
     let l = largeurPlan;
@@ -80,7 +84,9 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
     base.x = (largeurPlan - l) / 2;
     base.y = (hauteurPlan - h) / 2;
 
-    vue.l = limiter(base.l / zoomCourant, base.l / ZOOM_MAX, base.l);
+    const voulue = enVueComplete ? base.l
+      : (memeEchelle > 0 ? memeEchelle : base.l / zoomCourant);
+    vue.l = limiter(voulue, base.l / ZOOM_MAX, base.l);
     vue.h = vue.l * base.h / base.l;
     vue.x = centreX - vue.l / 2;
     vue.y = centreY - vue.h / 2;
@@ -98,9 +104,10 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
     const l = r.width || 1;
     const h = r.height || 1;
     if (l !== cadre.largeur || h !== cadre.hauteur) {
+      const largeurPrecedente = cadre.largeur;
       cadre.largeur = l;
       cadre.hauteur = h;
-      recalculerBase();
+      recalculerBase(largeurPrecedente);
     }
   }
 

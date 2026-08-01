@@ -640,49 +640,42 @@ input::placeholder {
 }
 
 
-#ecran-pivoter {
-  display: none;
-}
+
 
 @media (orientation: portrait) {
-  main {
-    display: none;
+  .options .groupe {
+    flex-wrap: wrap;
+    gap: 0.15rem 0.35rem;
   }
 
-  #ecran-pivoter {
-    display: flex;
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 2rem;
-    background: var(--fond);
-    color: var(--texte);
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-align: center;
+  .options .intitule {
+    flex: 0 0 100%;
+    width: auto;
+    text-align: left;
   }
-}
 
-#ecran-pivoter p {
-  margin: 0;
-  color: var(--texte);
-}
+  .barre {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
 
-#ecran-pivoter .pivoter-icone {
-  width: 3.5rem;
-  height: 5.5rem;
-  border: 3px solid var(--accent);
-  border-radius: 10px;
-  animation: pivoter 2.4s ease-in-out infinite;
-}
+  .barre .question {
+    flex: 1 1 100%;
+    font-size: 1.05rem;
+  }
 
-@keyframes pivoter {
-  0%, 30% { transform: rotate(0deg); }
-  55%, 100% { transform: rotate(-90deg); }
+  .barre input[type="text"] {
+    flex: 1 1 8rem;
+  }
+
+  .barre .retour {
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  #ecran-jeu {
+    gap: 0.3rem;
+  }
 }
 
 
@@ -693,11 +686,6 @@ input::placeholder {
   label:has(input[type="radio"]),
   button {
     transition: none;
-  }
-
-  #ecran-pivoter .pivoter-icone {
-    animation: none;
-    transform: rotate(-90deg);
   }
 
   button:active:not(:disabled) {
