@@ -452,6 +452,12 @@ function offrirSecondEssai(question, idPropose) {
   champ.focus();
 }
 
+function reponseAttendue(question) {
+  if (partie.mode !== 'capitale') return question.fr;
+  const entite = vueCourante ? vueCourante.parId.get(question.id) : null;
+  return entite && entite.capitale ? entite.capitale.fr : question.fr;
+}
+
 function traiterReponse(idPropose) {
   const question = partie.questionCourante();
   if (!question) return;
@@ -480,7 +486,7 @@ function traiterReponse(idPropose) {
       carte.memoriserVue();
       carte.zoomerSur(question.id);
     }
-    retour.textContent = idPropose ? `Non — ${question.fr}` : `Non reconnu — ${question.fr}`;
+    retour.textContent = `${idPropose ? 'Non' : 'Non reconnu'} — ${reponseAttendue(question)}`;
     retour.className = 'retour est-faux';
     enregistrerEchec(cleEchec(question.id));
   }
