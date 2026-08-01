@@ -62,6 +62,29 @@ sous d'autres codes — l'Australie y est `AUZ`, l'Afrique du Sud `ZAX`. Les deu
 Russie, seules à porter un nom dérivé plutôt qu'identique, sont écartées à la main dans
 `build/generer.cjs`.
 
+**Jouable hors ligne, et installable.** Un service worker met les 2 Mo du jeu en cache à la
+première visite les quatre cartes, les noms, le code, les icônes. Ensuite tout fonctionne sans
+réseau, y compris en avion. Le manifeste permet d'ajouter le jeu à l'écran d'accueil : il se lance
+alors en plein écran, sans barre d'URL, et **l'orientation paysage est imposée par le système**
+l'écran « Tourne ton téléphone » ne s'affiche plus.
+
+**Les mises à jour ne demandent aucune discipline.** Le nom du cache contient une empreinte du
+contenu réel de tous les fichiers livrés, calculée par `build/generer-sw.cjs`. Changer une
+virgule dans un CSS suffit à produire une nouvelle empreinte, donc un nouveau cache, donc un
+re-téléchargement ; et `npm run verifier` **échoue** si `sw.js` n'a pas été régénéré. Il n'y a
+pas de numéro de version à penser à incrémenter.
+
+Le nouveau service worker ne prend jamais la main sur une session en cours : il s'installe en
+arrière-plan, et l'accueil affiche alors « Une nouvelle version est prête ». Le bouton l'applique
+et recharge ; sinon elle s'appliquera d'elle-même au prochain lancement. L'ancien cache est
+supprimé à l'activation, il n'en reste jamais deux.
+
+Deux pièges déjoués, tous deux vérifiés par un test : le remplissage du cache force
+`cache: 'reload'`, sans quoi le navigateur peut resservir depuis son propre cache HTTP des
+fichiers périmés — GitHub Pages envoie un `max-age`. Et l'empreinte couvre aussi la logique de
+`sw.js` elle-même, sinon corriger le service worker sans toucher au reste ne déclencherait aucun
+rafraîchissement.
+
 **Mémoire des erreurs.** Les pays ratés sont conservés d'une partie à l'autre. « Voir mes erreurs »
 les liste, avec le nombre de fois pour ceux ratés plusieurs fois, et de là part une révision qui ne
 pose que ceux-là. Un pays deviné du premier coup pendant une révision sort de la liste ; encore
@@ -73,12 +96,59 @@ raté, il y reste.
 changer de thème ou de quitter, sans perdre l'écran de jeu.
 
 
+## Publier une mise à jour
+
+Le jeu s'installe sur le téléphone et continue de fonctionner sans réseau. La contrepartie :
+chaque appareil garde la version qu'il a téléchargée, et il faut lui signaler qu'une nouvelle
+existe. Ce signal, c'est `sw.js` : il contient la liste des fichiers du jeu et une empreinte de
+leur contenu. Tant que cette empreinte ne change pas, les appareils considèrent qu'ils sont à
+jour et ne retéléchargent rien.
+
+**La règle tient en une phrase : après toute modification, lancer `npm run sw`.**
+
+Le déroulé complet, dans l'ordre :
+
+| | Commande | Ce qu'elle fait |
+|---|---|---|
+| 1 | *(modifier le code, le style, les données ou les textes)* | |
+| 2 | `npm run sw` | met à jour la liste des fichiers et l'empreinte dans `sw.js` |
+| 3 | `npm run verifier` | refuse de passer si l'étape 2 a été oubliée |
+| 4 | `git commit` puis `git push` | **en incluant `sw.js`** dans le commit |
+
+GitHub Pages republie alors le site. Sur chaque téléphone, au lancement suivant du jeu et à
+condition d'avoir du réseau, la nouvelle version se télécharge en arrière-plan, puis l'accueil
+affiche « Une nouvelle version est prête ». Rien à désinstaller, rien à réinstaller.
+
+Régénérer les données par `npm run donnees` lance déjà `npm run sw` à la fin : dans ce cas,
+l'étape 2 est faite.
+
+### Si l'étape 2 est oubliée
+
+Rien de visible ne casse, et c'est bien le danger. En ligne, le jeu continue de fonctionner
+normalement, parce que ce qui n'est pas en cache est simplement demandé au réseau. Hors ligne en
+revanche, les appareils servent l'ancienne version indéfiniment, et un fichier nouvellement
+ajouté est purement absent le mode de jeu qui en dépend ne se lance pas. Aucun message
+n'apparaît, ni sur le téléphone ni au moment de pousser : `npm run verifier` est le seul endroit
+où l'oubli est signalé.
+
+### Le cas de l'édition depuis le site de GitHub
+
+Modifier un fichier directement dans l'interface web de GitHub ne permet pas de lancer
+`npm run sw`. Le changement est bien publié en ligne, mais **les appareils qui ont installé le
+jeu n'en verront jamais rien**. Pour une modification faite de cette façon, il faut repasser par
+la machine : `git pull`, puis `npm run sw`, puis commiter et pousser le `sw.js` régénéré.
+
+
 ## Arborescence
 
 ### Ce qui part sur le téléphone
 
 ```
 index.html       La structure : les emplacements, aucun style, aucune règle de jeu.
+sw.js          Généré. Service worker : met tout en cache, sert hors ligne, bascule
+            de cache à chaque nouvelle empreinte. Ne pas éditer VERSION ni RESSOURCES.
+manifest.webmanifest Nom, icônes, plein écran et orientation paysage à l'installation.
+icones/         Le globe de l'application, en 180, 192 et 512 px.
 css/
  base.css       Toute la mise en page, plus six constantes. Ne change jamais de thème.
  theme-sombre.css   Uniquement des variables de couleur (32).
@@ -89,6 +159,7 @@ js/
  saisie.js       Normalisation, distance d'édition, résolution d'un texte vers un pays.
  stockage.js      Meilleurs scores et pays ratés dans localStorage.
  messages.js      Les textes de fin de partie, par palier de score.
+ maj.js         Enregistre le service worker et propose la mise à jour quand elle est prête.
  main.js        Le câblage : écrans, chargement des données, boucle de jeu.
 data/          Généré, mais versionné voir plus bas.
  carte-onu.json    197 pays, contours projetés prêts à dessiner.
@@ -97,9 +168,10 @@ data/          Généré, mais versionné voir plus bas.
  alias.json      906 formes acceptées à la saisie, pour 395 entités.
 ```
 
-Aucun de ces fichiers n'a de dépendance. Le jeu tient en 67 Ko de code et 2 Mo de géométrie, dont
-une seule carte suffit à jouer les autres ne sont téléchargées que si on les choisit, et restent
-alors en mémoire pour la session.
+Aucun de ces fichiers n'a de dépendance. Le jeu tient en 67 Ko de code et 2 Mo de géométrie. En
+navigation ordinaire, une seule carte suffit à jouer les autres ne sont téléchargées que si on
+les choisit, et restent alors en mémoire pour la session. Le service worker, lui, prend tout
+d'un coup à la première visite, pour que les quatre cartes soient disponibles hors ligne.
 
 ### L'atelier jamais exécuté par le navigateur
 
@@ -109,12 +181,15 @@ build/
  generer.cjs      Projette la Terre, simplifie les frontières, corrige les noms français
             fautifs de la source, marque le hors-ONU, produit les data/carte-*.json.
  alias.mjs       Produit data/alias.json, et refuse d'écrire en cas de collision.
+ generer-sw.cjs    Réécrit la liste des ressources et l'empreinte de version dans sw.js.
  verifier-partie.mjs  22 contrôles sur le moteur de jeu : score, rattrapage, bornes, filtres.
  verifier-stockage.mjs 14 contrôles sur la progression : entrée et sortie de la liste d'erreurs.
  verifier-saisie.mjs  Vérifie que tout nom officiel et tout alias résolvent, sur les quatre
             périmètres, qu'aucune paire piège ne se confond, et qu'aucun des 197
             pays de l'ONU n'est accepté dans le périmètre hors ONU.
  verifier-themes.mjs  Fait respecter le contrat entre base.css et les feuilles de thème.
+ verifier-hors-ligne.mjs Refuse un sw.js périmé, un fichier livré absent du cache, ou un
+            manifeste incohérent.
 ```
 
 ### À la racine
