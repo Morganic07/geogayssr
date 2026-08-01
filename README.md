@@ -6,21 +6,16 @@ Site statique, sans backend ni framework. Le jeu livré ne charge **aucune bibli
 travail géographique est payé une fois, à la fabrication des données, sur la machine de
 développement.
 
-**Les deux orientations.** Le paysage donne la plus grande carte, mais le clavier y mange l'écran
-dès qu'il faut écrire : le jeu fonctionne donc aussi en portrait, et suit l'orientation de
-l'appareil sans rien imposer. À la bascule, **le cadrage est conservé** — même échelle, même centre
-—, de sorte qu'un pays zoomé le reste après rotation. Seule exception, la vue d'ensemble : elle
-reste une vue d'ensemble plutôt que de se retrouver amputée de moitié.
+## Quatre façons de jouer
 
-## Deux façons de jouer
+- Mode 1 : Cliquer sur le pays 
 
-Mode 1 : Cliquer sur le pays
-Mode 2 : Ecrire le nom du pays
-Mode 3 : Deviner la forme, silhouette seule, sans carte ni voisinage
-Mode 4 : Deviner la capitale, le pays est montré et nommé, un point marque la ville
+- Mode 2 : Ecrire le nom du pays
 
-Un pays raté ne passe jamais au vert : la bonne réponse est bien montrée c'est un jeu pour
-apprendre mais dans la couleur de l'erreur.
+- Mode 3 : Deviner la forme, silhouette seule, sans carte ni voisinage
+
+- Mode 4 : Deviner la capitale, le pays est montré et nommé, un point marque la ville
+
 
 ## Ce qu'on règle avant de jouer
 
@@ -28,13 +23,11 @@ apprendre mais dans la couleur de l'erreur.
 |---|---|
 | **Mode** | cliquer le pays · écrire son nom · deviner la forme · deviner la capitale |
 | **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) · hors ONU seulement (169) |
-| **Zone** | le monde entier, ou un continent |
+| **Zone** | le monde entier, ou un continent spécifique|
 | **Nombre de pays** | une valeur libre, ou tous |
 | **En cas d'erreur** | une seule chance, ou le pays revient plus tard dans la pile |
 | **Thème** | sombre ou sorbet |
 
-Le maximum du champ « nombre de pays » suit la carte **et** la zone : il tombe à 16 si on choisit
-l'Océanie dans le périmètre ONU.
 
 ## Les fonctionnalités
 
@@ -119,22 +112,6 @@ première visite les quatre cartes, les noms, le code, les icônes. Ensuite tout
 réseau, y compris en avion. Le manifeste permet d'ajouter le jeu à l'écran d'accueil : il se lance
 alors en plein écran, sans barre d'URL, dans l'orientation que l'on veut.
 
-**Les mises à jour ne demandent aucune discipline.** Le nom du cache contient une empreinte du
-contenu réel de tous les fichiers livrés, calculée par `build/generer-sw.cjs`. Changer une
-virgule dans un CSS suffit à produire une nouvelle empreinte, donc un nouveau cache, donc un
-re-téléchargement ; et `npm run verifier` **échoue** si `sw.js` n'a pas été régénéré. Il n'y a
-pas de numéro de version à penser à incrémenter.
-
-Le nouveau service worker ne prend jamais la main sur une session en cours : il s'installe en
-arrière-plan, et l'accueil affiche alors « Une nouvelle version est prête ». Le bouton l'applique
-et recharge ; sinon elle s'appliquera d'elle-même au prochain lancement. L'ancien cache est
-supprimé à l'activation, il n'en reste jamais deux.
-
-Deux pièges déjoués, tous deux vérifiés par un test : le remplissage du cache force
-`cache: 'reload'`, sans quoi le navigateur peut resservir depuis son propre cache HTTP des
-fichiers périmés — GitHub Pages envoie un `max-age`. Et l'empreinte couvre aussi la logique de
-`sw.js` elle-même, sinon corriger le service worker sans toucher au reste ne déclencherait aucun
-rafraîchissement.
 
 **Mémoire des erreurs.** Les pays ratés sont conservés d'une partie à l'autre. « Voir mes erreurs »
 ouvre quatre sections repliables, une par mode, chacune avec son compte et sa propre révision ;
@@ -151,9 +128,6 @@ sont abandonnées à la première ouverture de la nouvelle version, une fois pou
 meilleurs scores, eux, traversent la migration intacts.
 
 **Meilleurs scores** par configuration, conservés dans le navigateur.
-
-**Paramètres en cours de partie.** L'engrenage de la barre de jeu ouvre un panneau permettant de
-changer de thème ou de quitter, sans perdre l'écran de jeu.
 
 
 ## Publier une mise à jour
@@ -182,14 +156,6 @@ affiche « Une nouvelle version est prête ». Rien à désinstaller, rien à r�
 Régénérer les données par `npm run donnees` lance déjà `npm run sw` à la fin : dans ce cas,
 l'étape 2 est faite.
 
-### Si l'étape 2 est oubliée
-
-Rien de visible ne casse, et c'est bien le danger. En ligne, le jeu continue de fonctionner
-normalement, parce que ce qui n'est pas en cache est simplement demandé au réseau. Hors ligne en
-revanche, les appareils servent l'ancienne version indéfiniment, et un fichier nouvellement
-ajouté est purement absent le mode de jeu qui en dépend ne se lance pas. Aucun message
-n'apparaît, ni sur le téléphone ni au moment de pousser : `npm run verifier` est le seul endroit
-où l'oubli est signalé.
 
 ### Le cas de l'édition depuis le site de GitHub
 
