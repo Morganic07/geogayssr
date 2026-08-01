@@ -1,5 +1,5 @@
 const CLE = 'geogayssr.progression';
-const VERSION = 1;
+const VERSION = 2;
 
 let progression = null;
 let ecritureEnAttente = false;
@@ -45,6 +45,26 @@ function nettoyerCompteurs(source) {
   return propre;
 }
 
+function migrer(donnees) {
+  if (donnees.version === VERSION) {
+    return {
+      version: VERSION,
+      meilleurs: nettoyerCompteurs(donnees.meilleurs),
+      echecs: nettoyerCompteurs(donnees.echecs),
+      oublis: nettoyerCompteurs(donnees.oublis),
+    };
+  }
+  if (donnees.version === 1) {
+    return {
+      version: VERSION,
+      meilleurs: nettoyerCompteurs(donnees.meilleurs),
+      echecs: {},
+      oublis: {},
+    };
+  }
+  return null;
+}
+
 function analyser(brut) {
   let donnees;
   try {
@@ -52,13 +72,8 @@ function analyser(brut) {
   } catch {
     return null;
   }
-  if (!estObjetSimple(donnees) || donnees.version !== VERSION) return null;
-  return {
-    version: VERSION,
-    meilleurs: nettoyerCompteurs(donnees.meilleurs),
-    echecs: nettoyerCompteurs(donnees.echecs),
-    oublis: nettoyerCompteurs(donnees.oublis),
-  };
+  if (!estObjetSimple(donnees)) return null;
+  return migrer(donnees);
 }
 
 function lireDepuisStockage() {
