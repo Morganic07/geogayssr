@@ -599,6 +599,78 @@ input::placeholder {
   align-content: start;
 }
 
+.sections-erreurs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.section-erreurs {
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-barre);
+  text-align: center;
+}
+
+.section-erreurs summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--cible);
+  padding: 0 0.75rem;
+  color: var(--texte);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.section-erreurs summary::-webkit-details-marker {
+  display: none;
+}
+
+.section-erreurs summary::after {
+  content: '▾';
+  color: var(--texte-doux);
+  font-size: 0.8rem;
+  transition: transform var(--duree) ease-out;
+}
+
+.section-erreurs[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.section-erreurs .compteur-section {
+  min-width: 1.6rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--rayon-pastille);
+  background: var(--fond-champ);
+  color: var(--faux);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-erreurs .liste-rates {
+  padding: 0 0.6rem 0.6rem;
+}
+
+.section-erreurs .section-vide,
+.section-erreurs .section-note {
+  margin: 0;
+  padding: 0 0.6rem 0.7rem;
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+}
+
+.section-erreurs .bouton-reviser {
+  margin: 0 0 0.7rem;
+}
+
 
 .panneau {
   position: fixed;
@@ -684,6 +756,7 @@ input::placeholder {
   .pastille,
   .barre .progression::after,
   label:has(input[type="radio"]),
+  .section-erreurs summary::after,
   button {
     transition: none;
   }

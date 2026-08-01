@@ -32,6 +32,22 @@ const PERIMETRES = {
   'hors-onu': { fichier: 'subunits', jouable: (e) => e.horsOnu === true },
 };
 
+const NOMS_PERIMETRE = {
+  onu: 'Les 197 de l\'ONU',
+  units: 'Tous les territoires',
+  subunits: 'Territoires extrêmes',
+  'hors-onu': 'Hors ONU seulement',
+};
+
+const PERIMETRE_CAPITALE = 'onu';
+
+const MODES = [
+  { cle: 'clic', libelle: 'Cliquer le pays' },
+  { cle: 'saisie', libelle: 'Écrire son nom' },
+  { cle: 'forme', libelle: 'Deviner la forme' },
+  { cle: 'capitale', libelle: 'Deviner la capitale' },
+];
+
 const fichiersCharges = new Map();
 const vuesPerimetre = new Map();
 let alias = null;
@@ -104,9 +120,8 @@ async function chargerPerimetre(nom) {
   return vue;
 }
 
-function estJouable(vue, id) {
+function estJouable(vue, id, mode) {
   if (vue.jouables ? !vue.jouables.has(id) : !vue.parId.has(id)) return false;
-  const mode = lireOptions().mode;
   if (mode !== 'forme' && mode !== 'capitale') return true;
   const entite = vue.parId.get(id);
   if (!entite) return false;
@@ -130,12 +145,12 @@ function entitesJouables(vue, mode) {
   return vue.entites;
 }
 
-function cleEchec(id) {
-  return lireOptions().mode === 'capitale' ? `capitale:${id}` : id;
+function cleEchec(mode, id) {
+  return `${mode}|${id}`;
 }
 
-function idDepuisCle(cle) {
-  return cle.startsWith('capitale:') ? cle.slice(9) : cle;
+function perimetrePourMode(mode) {
+  return mode === 'capitale' ? PERIMETRE_CAPITALE : lireOptions().perimetre;
 }
 
 
@@ -239,60 +254,121 @@ function rafraichirMeilleurScore() {
   }
 }
 
-function entitesRateesIci() {
-  const donnees = vuesPerimetre.get(lireOptions().perimetre);
+function entitesRateesPourMode(mode) {
+  const donnees = vuesPerimetre.get(perimetrePourMode(mode));
   if (!donnees) return [];
-  const capitales = lireOptions().mode === 'capitale';
+  const prefixe = cleEchec(mode, '');
   return entitesLesPlusRatees()
-    .filter((cle) => cle.startsWith('capitale:') === capitales)
-    .map(idDepuisCle)
-    .filter((id) => estJouable(donnees, id));
+    .filter((cle) => cle.startsWith(prefixe))
+    .map((cle) => cle.slice(prefixe.length))
+    .filter((id) => estJouable(donnees, id, mode));
 }
 
 const REVISION_MAX = 20;
 
-function entitesRevisablesIci() {
-  return entitesRateesIci().slice(0, REVISION_MAX);
-}
-
 function rafraichirBoutonErreurs() {
-  $('#bouton-voir-erreurs').hidden = entitesRateesIci().length === 0;
+  $('#bouton-voir-erreurs').hidden = MODES.every(
+    ({ cle }) => entitesRateesPourMode(cle).length === 0,
+  );
 }
 
-function remplirListeEntites(liste, ids, donnees, echecs = null, avecCapitale = false) {
+function remplirListeEntites(liste, ids, donnees, echecs, mode) {
   liste.textContent = '';
   for (const id of ids) {
     const entite = donnees ? donnees.parId.get(id) : null;
     const item = document.createElement('li');
     item.textContent = entite ? entite.fr : id;
-    if (avecCapitale && entite && entite.capitale) {
+    if (mode === 'capitale' && entite && entite.capitale) {
       item.textContent += ` — ${entite.capitale.fr}`;
     }
-    if (echecs && echecs[cleEchec(id)] > 1) {
+    const rates = echecs ? echecs[cleEchec(mode, id)] : 0;
+    if (rates > 1) {
       const compteur = document.createElement('span');
       compteur.className = 'compteur';
-      compteur.textContent = `×${echecs[cleEchec(id)]}`;
+      compteur.textContent = `×${rates}`;
       item.append(' ', compteur);
     }
     liste.append(item);
   }
 }
 
-function afficherErreurs() {
-  const ids = entitesRateesIci();
-  const donnees = vuesPerimetre.get(lireOptions().perimetre);
+function sectionErreurs({ cle, libelle }, ids, echecs, ouverte) {
+  const section = document.createElement('details');
+  section.className = 'section-erreurs';
+  section.open = ouverte;
+
+  const titre = document.createElement('summary');
+  const nom = document.createElement('span');
+  nom.textContent = libelle;
+  const compteur = document.createElement('span');
+  compteur.className = 'compteur-section';
+  compteur.textContent = String(ids.length);
+  titre.append(nom, compteur);
+  section.append(titre);
+
+  if (ids.length === 0) {
+    const vide = document.createElement('p');
+    vide.className = 'section-vide';
+    vide.textContent = 'Aucune erreur dans ce mode.';
+    section.append(vide);
+    return section;
+  }
+
+  const liste = document.createElement('ul');
+  liste.className = 'liste-rates';
+  remplirListeEntites(liste, ids, vuesPerimetre.get(perimetrePourMode(cle)), echecs, cle);
+  section.append(liste);
+
+  const aReviser = Math.min(ids.length, REVISION_MAX);
+  if (ids.length > REVISION_MAX) {
+    const note = document.createElement('p');
+    note.className = 'section-note';
+    note.textContent = `La révision portera sur les ${REVISION_MAX} plus ratés.`;
+    section.append(note);
+  }
+
+  const bouton = document.createElement('button');
+  bouton.type = 'button';
+  bouton.className = 'bouton-principal bouton-reviser';
+  bouton.dataset.mode = cle;
+  bouton.textContent = aReviser === 1 ? 'Réviser cette erreur' : `Réviser ces ${aReviser}`;
+  section.append(bouton);
+  return section;
+}
+
+function construireSectionsErreurs() {
+  const conteneur = $('#sections-erreurs');
+  conteneur.textContent = '';
+  const { mode, perimetre } = lireOptions();
   const { echecs } = chargerProgression();
-  const capitales = lireOptions().mode === 'capitale';
-  remplirListeEntites($('#liste-erreurs'), ids, donnees, echecs, capitales);
+  let total = 0;
 
-  const pluriel = ids.length > 1 ? 's' : '';
-  const quoi = capitales ? `capitale${pluriel} ratée${pluriel}` : `pays raté${pluriel}`;
-  $('#erreurs-resume').textContent = ids.length === 0
-    ? 'Aucune erreur enregistrée dans ce périmètre.'
-    : `${ids.length} ${quoi} dans ce périmètre` +
-      (ids.length > REVISION_MAX ? ` — la révision portera sur les ${REVISION_MAX} plus ratés.` : '.');
+  for (const description of MODES) {
+    const ids = entitesRateesPourMode(description.cle);
+    total += ids.length;
+    conteneur.append(sectionErreurs(description, ids, echecs, description.cle === mode));
+  }
 
-  $('#bouton-reviser').hidden = ids.length === 0;
+  const carte = NOMS_PERIMETRE[perimetre] || perimetre;
+  const s = total > 1 ? 's' : '';
+  let resume = total === 0
+    ? `Aucune erreur enregistrée sur la carte « ${carte} ».`
+    : `${total} erreur${s} sur la carte « ${carte} », comptée${s} séparément par mode.`;
+  if (perimetre !== PERIMETRE_CAPITALE) {
+    resume += ` Les capitales, elles, sont toujours celles de la carte « ${NOMS_PERIMETRE[PERIMETRE_CAPITALE]} ».`;
+  }
+  $('#erreurs-resume').textContent = resume;
+}
+
+async function afficherErreurs() {
+  try {
+    await chargerPerimetre(lireOptions().perimetre);
+    await chargerPerimetre(PERIMETRE_CAPITALE);
+  } catch (e) {
+    signalerErreur(e);
+    return;
+  }
+  construireSectionsErreurs();
   afficherEcran('ecran-erreurs');
 }
 
@@ -488,7 +564,7 @@ function traiterReponse(idPropose) {
     }
     retour.textContent = `${idPropose ? 'Non' : 'Non reconnu'} — ${reponseAttendue(question)}`;
     retour.className = 'retour est-faux';
-    enregistrerEchec(cleEchec(question.id));
+    enregistrerEchec(cleEchec(partie.mode, question.id));
   }
 
   clearTimeout(minuterie);
@@ -533,12 +609,11 @@ function terminerPartie() {
   $('#message-final').textContent = messagePourScore(pourcentage);
 
   if (manche.estRevision) {
-    for (const id of partie.entitesTrouvees()) oublierEchec(cleEchec(id));
+    for (const id of partie.entitesTrouvees()) oublierEchec(cleEchec(manche.mode, id));
   }
 
   const ratees = partie.entitesRatees();
-  remplirListeEntites($('#liste-ratees'), ratees, vuesPerimetre.get(perimetreCharge),
-    null, manche.mode === 'capitale');
+  remplirListeEntites($('#liste-ratees'), ratees, vueCourante, null, manche.mode);
   $('#bloc-erreurs').hidden = ratees.length === 0;
 
   afficherEcran('ecran-fin');
@@ -556,10 +631,10 @@ async function lancer(options, entitesImposees = null) {
 
   dernieresOptions = { options, entitesImposees };
   const jouer = $('#bouton-jouer');
-  const reviser = $('#bouton-reviser');
+  const revisions = [...document.querySelectorAll('.bouton-reviser')];
   const libelle = jouer.textContent;
   jouer.disabled = true;
-  reviser.disabled = true;
+  for (const bouton of revisions) bouton.disabled = true;
   jouer.textContent = 'Chargement…';
   $('#erreur-chargement').hidden = true;
 
@@ -571,7 +646,7 @@ async function lancer(options, entitesImposees = null) {
   } finally {
     chargementEnCours = false;
     jouer.disabled = false;
-    reviser.disabled = false;
+    for (const bouton of revisions) bouton.disabled = false;
     jouer.textContent = libelle;
   }
 }
@@ -583,13 +658,16 @@ $('#bouton-voir-erreurs').addEventListener('click', afficherErreurs);
 $('#bouton-retour-accueil').addEventListener('click', retournerAccueil);
 $('#bouton-accueil').addEventListener('click', retournerAccueil);
 
-$('#bouton-reviser').addEventListener('click', () => {
-  const ratees = entitesRevisablesIci();
+$('#sections-erreurs').addEventListener('click', (ev) => {
+  const bouton = ev.target.closest('.bouton-reviser');
+  if (!bouton) return;
+  const mode = bouton.dataset.mode;
+  const ratees = entitesRateesPourMode(mode).slice(0, REVISION_MAX);
   if (ratees.length === 0) {
-    afficherErreurs();
+    construireSectionsErreurs();
     return;
   }
-  lancer(lireOptions(), ratees);
+  lancer({ ...lireOptions(), mode, perimetre: perimetrePourMode(mode) }, ratees);
 });
 
 $('#bouton-valider').addEventListener('click', validerSaisie);

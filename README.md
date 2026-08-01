@@ -85,10 +85,10 @@ La table `CAPITALES_MULTIPLES` de `build/generer.cjs` fixe donc la capitale mont
 également acceptées Pretoria avec Le Cap et Bloemfontein, Sucre avec La Paz, Amsterdam avec
 La Haye. C'est le seul endroit à modifier pour changer un arbitrage.
 
-**Les erreurs sont rangées à part** selon qu'elles portent sur un pays ou sur une capitale : rater
-la position de la Bolivie et rater sa capitale sont deux choses différentes, et la révision ne les
-mélange pas. La liste des erreurs de capitales affiche la réponse à côté du pays, « Bolivie
-Sucre », ce qui en fait un aide-mémoire consultable.
+**Les erreurs sont rangées par mode**, sans exception : rater la position de la Bolivie, ne pas
+savoir écrire son nom, ne pas reconnaître sa forme et ignorer sa capitale sont quatre choses
+différentes, et la révision ne les mélange pas. La liste des erreurs de capitales affiche la
+réponse à côté du pays, « Bolivie — Sucre », ce qui en fait un aide-mémoire consultable.
 
 **Un indice au lieu d'un échec sec.** En mode « deviner la forme », une réponse fausse mais
 reconnue n'interrompt pas la question : elle affiche la distance et la direction qui séparent le
@@ -137,9 +137,18 @@ fichiers périmés — GitHub Pages envoie un `max-age`. Et l'empreinte couvre a
 rafraîchissement.
 
 **Mémoire des erreurs.** Les pays ratés sont conservés d'une partie à l'autre. « Voir mes erreurs »
-les liste, avec le nombre de fois pour ceux ratés plusieurs fois, et de là part une révision qui ne
-pose que ceux-là. Un pays deviné du premier coup pendant une révision sort de la liste ; encore
-raté, il y reste.
+ouvre quatre sections repliables, une par mode, chacune avec son compte et sa propre révision ;
+celle du mode choisi à l'accueil s'ouvre d'emblée, et un mode sans erreur reste affiché à zéro. La
+liste donne le nombre de fois pour les pays ratés plusieurs fois. Un pays deviné du premier coup
+pendant une révision sort de la liste de ce mode ; encore raté, il y reste.
+
+Les trois premières sections suivent la carte choisie à l'accueil. Celle des capitales porte
+toujours sur la carte de l'ONU, seule où le mode existe, et sa révision s'y place d'elle-même quelle
+que soit la carte affichée à côté.
+
+Les erreurs mémorisées avant cette séparation ne disaient pas de quel mode elles venaient : elles
+sont abandonnées à la première ouverture de la nouvelle version, une fois pour toutes. Les
+meilleurs scores, eux, traversent la migration intacts.
 
 **Meilleurs scores** par configuration, conservés dans le navigateur.
 
@@ -238,7 +247,8 @@ build/
  alias.mjs       Produit data/alias.json, et refuse d'écrire en cas de collision.
  generer-sw.cjs    Réécrit la liste des ressources et l'empreinte de version dans sw.js.
  verifier-partie.mjs  22 contrôles sur le moteur de jeu : score, rattrapage, bornes, filtres.
- verifier-stockage.mjs 14 contrôles sur la progression : entrée et sortie de la liste d'erreurs.
+ verifier-stockage.mjs 20 contrôles sur la progression : entrée et sortie de la liste d'erreurs,
+            et reprise d'une progression enregistrée avant la séparation par mode.
  verifier-saisie.mjs  Vérifie que tout nom officiel et tout alias résolvent, sur les quatre
             périmètres, qu'aucune paire piège ne se confond, et qu'aucun des 197
             pays de l'ONU n'est accepté dans le périmètre hors ONU.
