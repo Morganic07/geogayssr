@@ -1,4 +1,4 @@
-const VERSION = '9c244f06e66b';
+const VERSION = '5dc4a06b284a';
 const CACHE = `geogayssr-${VERSION}`;
 
 const RESSOURCES = [
