@@ -48,8 +48,10 @@ const CORRECTIONS = {
 const JEUX = [
   { nom: 'onu', fichier: 'ne_10m_admin_0_countries', attendu: 197, filtreOnu: true },
   { nom: 'units', fichier: 'ne_10m_admin_0_map_units', attendu: 298 },
-  { nom: 'subunits', fichier: 'ne_10m_admin_0_map_subunits', attendu: 360 },
+  { nom: 'subunits', fichier: 'ne_10m_admin_0_map_subunits', attendu: 360, marquerHorsOnu: true },
 ];
+
+const CORPS_ONU = new Set(['RUA', 'RUE']);
 
 function codesPossibles(p) {
   return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3, p.SU_A3].filter((c) => c && c !== '-99');
@@ -125,7 +127,7 @@ function estFini(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
-function traiter(jeu) {
+function traiter(jeu, nomsOnu) {
   const brut = JSON.parse(
     fs.readFileSync(path.join(CACHE, jeu.fichier + '.geojson'), 'utf8')
   );
@@ -206,6 +208,23 @@ function traiter(jeu) {
     });
   }
 
+  let horsOnu = 0;
+  if (jeu.marquerHorsOnu) {
+    if (!nomsOnu || nomsOnu.size === 0) {
+      console.error(`\n${jeu.nom} : les noms du périmètre ONU manquent, impossible de marquer le hors-ONU`);
+      process.exit(1);
+    }
+    for (const e of entites) {
+      if (nomsOnu.has(e.fr) || CORPS_ONU.has(e.id)) continue;
+      e.horsOnu = true;
+      horsOnu++;
+    }
+    if (horsOnu === 0) {
+      console.error(`\n${jeu.nom} : aucune entité hors ONU, la carte serait vide`);
+      process.exit(1);
+    }
+  }
+
   const parNom = new Map();
   for (const e of entites) {
     const cle = e.fr.toLowerCase();
@@ -239,12 +258,19 @@ function traiter(jeu) {
   console.log(`  sans contour   ${minuscules} (jouables via leur pastille)`);
   console.log(`  dimensions     ${LARGEUR} × ${hauteur}`);
   console.log(`  poids          ${ko} Ko`);
+  if (jeu.marquerHorsOnu) console.log(`  hors ONU       ${horsOnu} (jouables dans le périmètre hors-onu)`);
   if (anomalies.length) {
     console.log(`  ANOMALIES      ${anomalies.length}`);
     anomalies.forEach((a) => console.log(`    - ${a}`));
   }
+
+  return entites;
 }
 
 fs.mkdirSync(SORTIE, { recursive: true });
-for (const jeu of JEUX) traiter(jeu);
+let nomsOnu = null;
+for (const jeu of JEUX) {
+  const entites = traiter(jeu, nomsOnu);
+  if (jeu.nom === 'onu') nomsOnu = new Set(entites.map((e) => e.fr));
+}
 console.log('\nTerminé.');

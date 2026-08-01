@@ -23,7 +23,7 @@ apprendre mais dans la couleur de l'erreur.
 | Réglage | Choix |
 |---|---|
 | **Mode** | cliquer le pays, ou écrire son nom |
-| **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) |
+| **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) · hors ONU seulement (169) |
 | **Zone** | le monde entier, ou un continent |
 | **Nombre de pays** | une valeur libre, ou tous |
 | **En cas d'erreur** | une seule chance, ou le pays revient plus tard dans la pile |
@@ -48,6 +48,19 @@ cliquable, avec une cible de 44 px de diamètre très au-dessus du disque réell
 mode saisie, la carte se recadre sur le pays demandé, à un facteur volontairement modéré : serré
 sur ses frontières, un pays n'est qu'une forme hors contexte, c'est le voisinage qui permet de le
 reconnaître.
+
+**Hors ONU, pour qui connaît déjà les 197.** La quatrième carte retire de la liste des 358 tout ce
+qui est déjà un pays de l'ONU, et ne pose que les 169 restants : Alaska, Açores, Svalbard,
+Somaliland, Zanzibar, Écosse, Kaliningrad. Les 197 pays restent **dessinés en fond**, atténués,
+mais ne sont ni cliquables ni jamais demandés sans l'Afrique à l'écran, personne ne trouve
+Mayotte. En mode saisie, le nom d'un pays de l'ONU est compris mais compté faux : répondre
+« Allemagne » affiche la bonne réponse, pas « non reconnu ».
+
+Le partage se fait sur le nom français : une entité des 358 dont le nom est déjà celui d'un des 197
+est du fond, jamais une question. C'est ce qui écarte les corps de pays que Natural Earth découpe
+sous d'autres codes — l'Australie y est `AUZ`, l'Afrique du Sud `ZAX`. Les deux moitiés de la
+Russie, seules à porter un nom dérivé plutôt qu'identique, sont écartées à la main dans
+`build/generer.cjs`.
 
 **Mémoire des erreurs.** Les pays ratés sont conservés d'une partie à l'autre. « Voir mes erreurs »
 les liste, avec le nombre de fois pour ceux ratés plusieurs fois, et de là part une révision qui ne
@@ -80,7 +93,7 @@ js/
 data/          Généré, mais versionné voir plus bas.
  carte-onu.json    197 pays, contours projetés prêts à dessiner.
  carte-units.json   296 territoires.
- carte-subunits.json  358 territoires.
+ carte-subunits.json  358 territoires, dont 169 marqués hors ONU.
  alias.json      906 formes acceptées à la saisie, pour 395 entités.
 ```
 
@@ -94,12 +107,13 @@ alors en mémoire pour la session.
 build/
  telecharger.cjs    Récupère les jeux Natural Earth v5 (domaine public) dans build/cache/.
  generer.cjs      Projette la Terre, simplifie les frontières, corrige les noms français
-            fautifs de la source, produit les data/carte-*.json.
+            fautifs de la source, marque le hors-ONU, produit les data/carte-*.json.
  alias.mjs       Produit data/alias.json, et refuse d'écrire en cas de collision.
  verifier-partie.mjs  22 contrôles sur le moteur de jeu : score, rattrapage, bornes, filtres.
  verifier-stockage.mjs 14 contrôles sur la progression : entrée et sortie de la liste d'erreurs.
- verifier-saisie.mjs  Vérifie que tout nom officiel et tout alias résolvent, sur les trois
-            périmètres, et qu'aucune paire piège ne se confond.
+ verifier-saisie.mjs  Vérifie que tout nom officiel et tout alias résolvent, sur les quatre
+            périmètres, qu'aucune paire piège ne se confond, et qu'aucun des 197
+            pays de l'ONU n'est accepté dans le périmètre hors ONU.
  verifier-themes.mjs  Fait respecter le contrat entre base.css et les feuilles de thème.
 ```
 

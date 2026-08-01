@@ -5,7 +5,12 @@ const RACINE = new URL('..', import.meta.url).pathname;
 const lire = (f) => JSON.parse(readFileSync(RACINE + f, 'utf8'));
 
 const alias = lire('data/alias.json');
-const PERIMETRES = ['onu', 'units', 'subunits'];
+const PERIMETRES = [
+  { nom: 'onu', fichier: 'onu' },
+  { nom: 'units', fichier: 'units' },
+  { nom: 'subunits', fichier: 'subunits' },
+  { nom: 'hors-onu', fichier: 'subunits', jouable: (e) => e.horsOnu === true },
+];
 
 const PIEGES = [
   ['Niger', 'Nigeria'], ['Guinée', 'Guinée-Bissau'], ['Guinée', 'Guinée équatoriale'],
@@ -15,16 +20,23 @@ const PIEGES = [
   ['Zambie', 'Gambie'], ['Iran', 'Irak'], ['Guyana', 'Guyane'],
 ];
 
+const NOMS_ONU = lire('data/carte-onu.json').entites.map((e) => e.fr);
+
 let echecs = 0;
 const signaler = (m) => { echecs++; console.log('  ✗ ' + m); };
 
 for (const perimetre of PERIMETRES) {
-  const donnees = lire(`data/carte-${perimetre}.json`);
-  const entites = donnees.entites;
-  const resolveur = creerResolveur(entites, alias);
-  const parId = new Map(entites.map((e) => [e.id, e]));
+  const donnees = lire(`data/carte-${perimetre.fichier}.json`);
+  const entites = perimetre.jouable ? donnees.entites.filter(perimetre.jouable) : donnees.entites;
+  const resolveur = creerResolveur(donnees.entites, alias);
+  const parId = new Map(donnees.entites.map((e) => [e.id, e]));
+  const jouables = new Set(entites.map((e) => e.id));
 
-  console.log(`\n=== ${perimetre} (${entites.length} entités) ===`);
+  console.log(`\n=== ${perimetre.nom} (${entites.length} entités) ===`);
+  if (entites.length === 0) {
+    signaler('périmètre vide');
+    continue;
+  }
 
   let nomsKo = 0;
   for (const e of entites) {
@@ -71,12 +83,17 @@ for (const perimetre of PERIMETRES) {
   if (piegesKo === 0) console.log(`  ✓ ${piegesTestes} paire(s) piège testée(s), aucune confondue`);
 
   const FAUTES = [
-    ['allemagne', 'Allemagne'], ['Allemange', 'Allemagne'], ['ALLEMAGNE', 'Allemagne'],
-    ['germany', 'Allemagne'], ['etats unis', null], ['USA', null],
-    ['birmanie', null], ['cote divoire', null], ['republique tcheque', null],
+    ['allemagne', 'Allemagne', 'Allemagne'], ['Allemange', 'Allemagne', 'Allemagne'],
+    ['ALLEMAGNE', 'Allemagne', 'Allemagne'], ['germany', 'Allemagne', 'Allemagne'],
+    ['etats unis', null, 'États-Unis'], ['USA', null, 'États-Unis'],
+    ['birmanie', null, 'Birmanie'], ['cote divoire', null, "Côte d'Ivoire"],
+    ['republique tcheque', null, 'Tchéquie'],
   ];
   let fautesKo = 0;
-  for (const [saisie, attenduFr] of FAUTES) {
+  let fautesTestees = 0;
+  for (const [saisie, attenduFr, reference] of FAUTES) {
+    if (!nomsPresents.has(normaliser(reference))) continue;
+    fautesTestees++;
     const r = resolveur.resoudre(saisie);
     if (!r) { fautesKo++; signaler(`« ${saisie} » → null`); continue; }
     if (attenduFr && parId.get(r.id)?.fr !== attenduFr) {
@@ -84,7 +101,9 @@ for (const perimetre of PERIMETRES) {
       signaler(`« ${saisie} » → ${parId.get(r.id)?.fr} au lieu de ${attenduFr}`);
     }
   }
-  if (fautesKo === 0) console.log('  ✓ les fautes de frappe courantes sont rattrapées');
+  if (fautesKo === 0) {
+    console.log(`  ✓ ${fautesTestees} faute(s) de frappe courante(s) rattrapée(s)`);
+  }
 
   const vues = new Map();
   let collisions = 0;
@@ -100,6 +119,21 @@ for (const perimetre of PERIMETRES) {
     }
   }
   if (collisions === 0) console.log('  ✓ aucune forme ambiguë dans le périmètre');
+
+  if (perimetre.nom === 'hors-onu') {
+    let onuKo = 0;
+    let onuTestes = 0;
+    for (const nom of NOMS_ONU) {
+      if (nomsPresents.has(normaliser(nom))) continue;
+      onuTestes++;
+      const r = resolveur.resoudre(nom);
+      if (!r || !jouables.has(r.id)) continue;
+      onuKo++;
+      if (onuKo <= 5) signaler(`« ${nom} », pays de l'ONU, est accepté ici → ${parId.get(r.id)?.fr}`);
+    }
+    if (onuKo > 5) signaler(`… et ${onuKo - 5} autres pays de l'ONU acceptés`);
+    if (onuKo === 0) console.log(`  ✓ les ${onuTestes} pays de l'ONU absents d'ici ne résolvent pas`);
+  }
 }
 
 console.log(echecs === 0 ? '\nTout est vert.' : `\n${echecs} problème(s).`);
