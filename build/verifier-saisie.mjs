@@ -136,5 +136,43 @@ for (const perimetre of PERIMETRES) {
   }
 }
 
+console.log('\n=== capitales ===');
+{
+  const onu = lire('data/carte-onu.json');
+  const avec = onu.entites.filter((e) => e.capitale);
+  console.log(`  ✓ ${avec.length} pays sur ${onu.entites.length} ont une capitale`);
+
+  const formes = avec.flatMap((e) => e.capitale.noms.map((nom) => ({ id: e.id, fr: nom, en: nom })));
+  const resolveur = creerResolveur(formes, {});
+  const parId = new Map(onu.entites.map((e) => [e.id, e]));
+
+  let ko = 0;
+  for (const f of formes) {
+    const r = resolveur.resoudre(f.fr);
+    if (!r || r.id !== f.id) {
+      ko++;
+      if (ko <= 5) signaler(`« ${f.fr} » (${parId.get(f.id).fr}) → ${r ? parId.get(r.id)?.fr : 'null'}`);
+    }
+  }
+  if (ko > 5) signaler(`… et ${ko - 5} autres capitales non résolues`);
+  if (ko === 0) console.log(`  ✓ les ${formes.length} formes acceptées résolvent vers leur pays`);
+
+  const vues = new Map();
+  let collisions = 0;
+  for (const f of formes) {
+    const n = normaliser(f.fr);
+    if (vues.has(n) && vues.get(n) !== f.id) {
+      collisions++;
+      signaler(`« ${f.fr} » désigne ${parId.get(vues.get(n)).fr} et ${parId.get(f.id).fr}`);
+    }
+    vues.set(n, f.id);
+  }
+  if (collisions === 0) console.log('  ✓ aucune capitale ambiguë entre deux pays');
+
+  const sansPoint = avec.filter((e) => !Array.isArray(e.capitale.point) || e.capitale.point.length !== 2);
+  if (sansPoint.length) signaler(`${sansPoint.length} capitale(s) sans position`);
+  else console.log('  ✓ toutes les capitales ont une position sur la carte');
+}
+
 console.log(echecs === 0 ? '\nTout est vert.' : `\n${echecs} problème(s).`);
 process.exit(echecs === 0 ? 0 : 1);

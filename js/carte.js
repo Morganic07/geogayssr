@@ -4,6 +4,7 @@ const ZOOM_MIN = 1;
 const ZOOM_MAX = 40;
 
 const RAYON_PASTILLE = 11;
+const RAYON_CAPITALE = 9;
 const SEUIL_VISIBLE = 30;
 
 const TOLERANCE_TOUCHER = 22;
@@ -40,6 +41,7 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
 
   let groupeContours = null;
   let groupePastilles = null;
+  let marqueur = null;
 
   const cadre = { gauche: 0, haut: 0, largeur: 1, hauteur: 1 };
   const base = { x: 0, y: 0, l: largeurPlan, h: hauteurPlan };
@@ -132,6 +134,7 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
     if (zoom !== zoomApplique) {
       zoomApplique = zoom;
       majPastilles(zoom);
+      if (marqueur) marqueur.setAttribute('r', RAYON_CAPITALE / zoom);
     }
   }
 
@@ -234,6 +237,7 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
   function dessiner() {
     if (groupeContours) groupeContours.remove();
     if (groupePastilles) groupePastilles.remove();
+    if (marqueur) marqueur.remove();
     fiches.clear();
     pastilles.length = 0;
     etatsPoses.clear();
@@ -301,9 +305,16 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
       return a.zoomDisparition < b.zoomDisparition ? -1 : 1;
     });
 
+    marqueur = document.createElementNS(NS_SVG, 'circle');
+    marqueur.setAttribute('class', 'capitale');
+    marqueur.setAttribute('r', RAYON_CAPITALE);
+    marqueur.style.display = 'none';
+    marqueur.style.pointerEvents = 'none';
+
     const fragment = document.createDocumentFragment();
     fragment.appendChild(groupeContours);
     fragment.appendChild(groupePastilles);
+    fragment.appendChild(marqueur);
     elementSvg.appendChild(fragment);
 
     mesurer();
@@ -602,8 +613,10 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
     }
     if (groupeContours) groupeContours.remove();
     if (groupePastilles) groupePastilles.remove();
+    if (marqueur) marqueur.remove();
     groupeContours = null;
     groupePastilles = null;
+    marqueur = null;
     fiches.clear();
     pastilles.length = 0;
     etatsPoses.clear();
@@ -614,8 +627,26 @@ export function creerCarte(elementSvg, donnees, jouables = null) {
     rappelClic = null;
   }
 
+  function marquerCapitale(point) {
+    if (!marqueur) return;
+    if (!point || !Number.isFinite(point[0]) || !Number.isFinite(point[1])) {
+      marqueur.style.display = 'none';
+      return;
+    }
+    marqueur.setAttribute('cx', point[0]);
+    marqueur.setAttribute('cy', point[1]);
+    marqueur.setAttribute('r', RAYON_CAPITALE / (zoomApplique > 0 ? zoomApplique : 1));
+    marqueur.style.display = '';
+  }
+
+  function effacerCapitale() {
+    if (marqueur) marqueur.style.display = 'none';
+  }
+
   return {
     dessiner: dessiner,
+    marquerCapitale: marquerCapitale,
+    effacerCapitale: effacerCapitale,
     definirEtat: definirEtat,
     reinitialiserEtats: reinitialiserEtats,
     zoomerSur: zoomerSur,

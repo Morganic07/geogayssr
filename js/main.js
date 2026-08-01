@@ -106,9 +106,17 @@ async function chargerPerimetre(nom) {
 
 function estJouable(vue, id) {
   if (vue.jouables ? !vue.jouables.has(id) : !vue.parId.has(id)) return false;
-  if (lireOptions().mode !== 'forme') return true;
+  const mode = lireOptions().mode;
+  if (mode !== 'forme' && mode !== 'capitale') return true;
   const entite = vue.parId.get(id);
-  return !!(entite && entite.forme);
+  if (!entite) return false;
+  return mode === 'forme' ? !!entite.forme : !!entite.capitale;
+}
+
+function formesDesCapitales(entites) {
+  return entites
+    .filter((e) => e.capitale)
+    .flatMap((e) => e.capitale.noms.map((nom) => ({ id: e.id, fr: nom, en: nom })));
 }
 
 function basculerSvg(element, visible) {
@@ -117,7 +125,17 @@ function basculerSvg(element, visible) {
 }
 
 function entitesJouables(vue, mode) {
-  return mode === 'forme' ? vue.entites.filter((e) => e.forme) : vue.entites;
+  if (mode === 'forme') return vue.entites.filter((e) => e.forme);
+  if (mode === 'capitale') return vue.entites.filter((e) => e.capitale);
+  return vue.entites;
+}
+
+function cleEchec(id) {
+  return lireOptions().mode === 'capitale' ? `capitale:${id}` : id;
+}
+
+function idDepuisCle(cle) {
+  return cle.startsWith('capitale:') ? cle.slice(9) : cle;
 }
 
 
@@ -152,6 +170,26 @@ function rafraichirMaxPays() {
   champ.max = String(total);
   champ.title = `Entre 1 et ${total}`;
   if (Number(champ.value) > total) champ.value = String(total);
+}
+
+const RAISON_CARTE_VERROUILLEE =
+  'Le mode « Deviner la capitale » ne fonctionne que sur la carte des 197 pays de l\'ONU';
+
+function verrouillerCarte() {
+  const capitale = lireOptions().mode === 'capitale';
+  let bascule = false;
+  for (const champ of document.querySelectorAll('input[name="perimetre"]')) {
+    const interdit = capitale && champ.value !== 'onu';
+    champ.disabled = interdit;
+    const etiquette = champ.closest('label');
+    if (etiquette) etiquette.title = interdit ? RAISON_CARTE_VERROUILLEE : '';
+    if (interdit && champ.checked) {
+      champ.checked = false;
+      bascule = true;
+    }
+  }
+  if (bascule) $('input[name="perimetre"][value="onu"]').checked = true;
+  return bascule;
 }
 
 function rafraichirChampNombre() {
@@ -204,7 +242,11 @@ function rafraichirMeilleurScore() {
 function entitesRateesIci() {
   const donnees = vuesPerimetre.get(lireOptions().perimetre);
   if (!donnees) return [];
-  return entitesLesPlusRatees().filter((id) => estJouable(donnees, id));
+  const capitales = lireOptions().mode === 'capitale';
+  return entitesLesPlusRatees()
+    .filter((cle) => cle.startsWith('capitale:') === capitales)
+    .map(idDepuisCle)
+    .filter((id) => estJouable(donnees, id));
 }
 
 const REVISION_MAX = 20;
@@ -217,16 +259,19 @@ function rafraichirBoutonErreurs() {
   $('#bouton-voir-erreurs').hidden = entitesRateesIci().length === 0;
 }
 
-function remplirListeEntites(liste, ids, donnees, echecs = null) {
+function remplirListeEntites(liste, ids, donnees, echecs = null, avecCapitale = false) {
   liste.textContent = '';
   for (const id of ids) {
     const entite = donnees ? donnees.parId.get(id) : null;
     const item = document.createElement('li');
     item.textContent = entite ? entite.fr : id;
-    if (echecs && echecs[id] > 1) {
+    if (avecCapitale && entite && entite.capitale) {
+      item.textContent += ` — ${entite.capitale.fr}`;
+    }
+    if (echecs && echecs[cleEchec(id)] > 1) {
       const compteur = document.createElement('span');
       compteur.className = 'compteur';
-      compteur.textContent = `×${echecs[id]}`;
+      compteur.textContent = `×${echecs[cleEchec(id)]}`;
       item.append(' ', compteur);
     }
     liste.append(item);
@@ -237,12 +282,14 @@ function afficherErreurs() {
   const ids = entitesRateesIci();
   const donnees = vuesPerimetre.get(lireOptions().perimetre);
   const { echecs } = chargerProgression();
-  remplirListeEntites($('#liste-erreurs'), ids, donnees, echecs);
+  const capitales = lireOptions().mode === 'capitale';
+  remplirListeEntites($('#liste-erreurs'), ids, donnees, echecs, capitales);
 
   const pluriel = ids.length > 1 ? 's' : '';
+  const quoi = capitales ? `capitale${pluriel} ratée${pluriel}` : `pays raté${pluriel}`;
   $('#erreurs-resume').textContent = ids.length === 0
     ? 'Aucune erreur enregistrée dans ce périmètre.'
-    : `${ids.length} pays raté${pluriel} dans ce périmètre` +
+    : `${ids.length} ${quoi} dans ce périmètre` +
       (ids.length > REVISION_MAX ? ` — la révision portera sur les ${REVISION_MAX} plus ratés.` : '.');
 
   $('#bouton-reviser').hidden = ids.length === 0;
@@ -261,6 +308,7 @@ async function demarrerPartie(options, entitesImposees = null) {
   vueCourante = donnees;
 
   const estForme = options.mode === 'forme';
+  const estCapitale = options.mode === 'capitale';
   const disponibles = entitesJouables(donnees, options.mode);
 
   if (estForme) {
@@ -309,15 +357,19 @@ async function demarrerPartie(options, entitesImposees = null) {
   partie.demarrer();
   manche = {
     zone,
+    mode: options.mode,
     estRevision: entitesImposees !== null,
     cle: entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options),
   };
 
-  const parEcrit = options.mode === 'saisie' || estForme;
-  if (parEcrit && !resolveurs.has(donnees.fichier)) {
-    resolveurs.set(donnees.fichier, creerResolveur(donnees.fond.entites, alias));
+  const parEcrit = options.mode === 'saisie' || estForme || estCapitale;
+  const cleResolveur = estCapitale ? `capitales:${donnees.fichier}` : donnees.fichier;
+  if (parEcrit && !resolveurs.has(cleResolveur)) {
+    resolveurs.set(cleResolveur, estCapitale
+      ? creerResolveur(formesDesCapitales(donnees.fond.entites), {})
+      : creerResolveur(donnees.fond.entites, alias));
   }
-  resolveurCourant = parEcrit ? resolveurs.get(donnees.fichier) : null;
+  resolveurCourant = parEcrit ? resolveurs.get(cleResolveur) : null;
   $('#champ-reponse').hidden = !parEcrit;
   $('#bouton-valider').hidden = !parEcrit;
 
@@ -340,6 +392,7 @@ function poserQuestion() {
   );
   $('#retour').textContent = '';
   $('#retour').className = 'retour';
+  if (carte && partie.mode !== 'capitale') carte.effacerCapitale();
 
   if (partie.mode === 'clic') {
     $('#consigne').textContent = question.fr;
@@ -349,6 +402,12 @@ function poserQuestion() {
   if (partie.mode === 'forme') {
     $('#consigne').textContent = 'Quel est ce territoire ?';
     silhouette.dessiner(vueCourante.parId.get(question.id));
+  } else if (partie.mode === 'capitale') {
+    const entite = vueCourante.parId.get(question.id);
+    $('#consigne').textContent = `Quelle est la capitale de ${question.fr} ?`;
+    carte.definirEtat(question.id, 'interroge');
+    carte.zoomerSur(question.id);
+    carte.marquerCapitale(entite && entite.capitale ? entite.capitale.point : null);
   } else {
     $('#consigne').textContent = 'Quel est ce pays ?';
     carte.definirEtat(question.id, 'interroge');
@@ -365,7 +424,7 @@ function surClicCarte(id) {
 
 function validerSaisie() {
   if (!partie || enAttente) return;
-  if (partie.mode !== 'saisie' && partie.mode !== 'forme') return;
+  if (!['saisie', 'forme', 'capitale'].includes(partie.mode)) return;
   const texte = $('#champ-reponse').value.trim();
   if (!texte) return;
   if (!resolveurCourant) return;
@@ -423,7 +482,7 @@ function traiterReponse(idPropose) {
     }
     retour.textContent = idPropose ? `Non — ${question.fr}` : `Non reconnu — ${question.fr}`;
     retour.className = 'retour est-faux';
-    enregistrerEchec(question.id);
+    enregistrerEchec(cleEchec(question.id));
   }
 
   clearTimeout(minuterie);
@@ -468,11 +527,12 @@ function terminerPartie() {
   $('#message-final').textContent = messagePourScore(pourcentage);
 
   if (manche.estRevision) {
-    for (const id of partie.entitesTrouvees()) oublierEchec(id);
+    for (const id of partie.entitesTrouvees()) oublierEchec(cleEchec(id));
   }
 
   const ratees = partie.entitesRatees();
-  remplirListeEntites($('#liste-ratees'), ratees, vuesPerimetre.get(perimetreCharge));
+  remplirListeEntites($('#liste-ratees'), ratees, vuesPerimetre.get(perimetreCharge),
+    null, manche.mode === 'capitale');
   $('#bloc-erreurs').hidden = ratees.length === 0;
 
   afficherEcran('ecran-fin');
@@ -608,7 +668,10 @@ for (const champ of document.querySelectorAll('input[name="perimetre"]')) {
   champ.addEventListener('change', rafraichirZones);
 }
 for (const champ of document.querySelectorAll('input[name="mode"]')) {
-  champ.addEventListener('change', rafraichirZones);
+  champ.addEventListener('change', () => {
+    verrouillerCarte();
+    rafraichirZones();
+  });
 }
 for (const nom of ['longueur', 'politique']) {
   for (const champ of document.querySelectorAll(`input[name="${nom}"]`)) {
@@ -629,6 +692,7 @@ $('#choix-zone').addEventListener('change', () => {
   rafraichirMeilleurScore();
 });
 
+verrouillerCarte();
 rafraichirChampNombre();
 rafraichirZones();
 rafraichirBoutonErreurs();

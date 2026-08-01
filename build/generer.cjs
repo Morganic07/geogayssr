@@ -51,7 +51,7 @@ const CORRECTIONS = {
 };
 
 const JEUX = [
-  { nom: 'onu', fichier: 'ne_10m_admin_0_countries', attendu: 197, filtreOnu: true },
+  { nom: 'onu', fichier: 'ne_10m_admin_0_countries', attendu: 197, filtreOnu: true, capitales: true },
   { nom: 'units', fichier: 'ne_10m_admin_0_map_units', attendu: 298 },
   { nom: 'subunits', fichier: 'ne_10m_admin_0_map_subunits', attendu: 360, marquerHorsOnu: true },
 ];
@@ -59,6 +59,27 @@ const JEUX = [
 const CORPS_ONU = new Set(['RUA', 'RUE']);
 
 const SILHOUETTE_MORCEAU_SEUL = new Set(['USA', 'NOR']);
+
+const FICHIER_VILLES = 'ne_10m_populated_places';
+
+const CAPITALES_MULTIPLES = {
+  ZAF: { principale: 'Pretoria', aussi: ['Le Cap', 'Bloemfontein'] },
+  BEN: { principale: 'Porto-Novo', aussi: ['Cotonou'] },
+  MMR: { principale: 'Naypyidaw', aussi: [] },
+  BOL: { principale: 'Sucre', aussi: ['La Paz'] },
+  CHL: { principale: 'Santiago', aussi: [] },
+  CIV: { principale: 'Yamoussoukro', aussi: ['Abidjan'] },
+  SWZ: { principale: 'Mbabane', aussi: ['Lobamba'] },
+  ISR: { principale: 'Jérusalem', aussi: ['Tel Aviv'] },
+  JPN: { principale: 'Tokyo', aussi: [] },
+  MYS: { principale: 'Kuala Lumpur', aussi: ['Putrajaya'] },
+  MAR: { principale: 'Rabat', aussi: [] },
+  NGA: { principale: 'Abuja', aussi: [] },
+  NLD: { principale: 'Amsterdam', aussi: ['La Haye'] },
+  PHL: { principale: 'Manille', aussi: [] },
+  LKA: { principale: 'Colombo', aussi: ['Sri Jayawardenapura'] },
+  TZA: { principale: 'Dodoma', aussi: ['Dar es Salam'] },
+};
 
 function codesPossibles(p) {
   return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3, p.SU_A3].filter((c) => c && c !== '-99');
@@ -221,6 +242,61 @@ function cadreSilhouette(d, id) {
   return cadre;
 }
 
+function chargerCapitales() {
+  const chemin = path.join(CACHE, FICHIER_VILLES + '.geojson');
+  if (!fs.existsSync(chemin)) {
+    console.error(`\n${FICHIER_VILLES} absent du cache : lance « npm run donnees » pour le récupérer`);
+    process.exit(1);
+  }
+  const brut = JSON.parse(fs.readFileSync(chemin, 'utf8'));
+  return brut.features
+    .filter((f) => /^Admin-0 capital/.test(f.properties.FEATURECLA))
+    .map((f) => ({
+      fr: f.properties.NAME_FR || f.properties.NAME,
+      en: f.properties.NAME_EN || f.properties.NAME,
+      point: [f.properties.LONGITUDE, f.properties.LATITUDE],
+    }))
+    .filter((c) => c.fr && c.point.every(estFini));
+}
+
+function attribuerCapitales(features, villes) {
+  const parPays = new Map();
+  for (const ville of villes) {
+    for (const f of features) {
+      if (!d3.geoContains(f, ville.point)) continue;
+      const id = f.properties.SU_A3;
+      if (!parPays.has(id)) parPays.set(id, []);
+      parPays.get(id).push(ville);
+      break;
+    }
+  }
+  return parPays;
+}
+
+function choisirCapitale(id, trouvees, anomalies) {
+  const regle = CAPITALES_MULTIPLES[id];
+  if (!regle) {
+    if (trouvees.length === 1) return { principale: trouvees[0], noms: [trouvees[0]] };
+    anomalies.push(`${id} : ${trouvees.length} capitales sans règle, à trancher dans CAPITALES_MULTIPLES`);
+    return null;
+  }
+
+  const parNom = new Map(trouvees.map((c) => [c.fr, c]));
+  const principale = parNom.get(regle.principale);
+  if (!principale) {
+    anomalies.push(`${id} : « ${regle.principale} » introuvable parmi ${trouvees.map((c) => c.fr).join(', ')}`);
+    return null;
+  }
+
+  const noms = [principale];
+  for (const nom of regle.aussi) {
+    const autre = parNom.get(nom);
+    if (autre) noms.push(autre);
+    else anomalies.push(`${id} : « ${nom} » introuvable, réponse alternative ignorée`);
+  }
+  return { principale, noms };
+}
+
 function traiter(jeu, nomsOnu) {
   const brut = JSON.parse(
     fs.readFileSync(path.join(CACHE, jeu.fichier + '.geojson'), 'utf8')
@@ -247,6 +323,10 @@ function traiter(jeu, nomsOnu) {
 
   const projection = d3.geoNaturalEarth1();
   projection.fitWidth(LARGEUR, { type: 'FeatureCollection', features: retenues });
+
+  const capitalesParPays = jeu.capitales
+    ? attribuerCapitales(retenues, chargerCapitales())
+    : new Map();
 
   const contexte = contexteArrondi(DECIMALES);
   const chemin = d3.geoPath(projection, contexte);
@@ -307,6 +387,21 @@ function traiter(jeu, nomsOnu) {
     const centre = centreSpherique(source.geometry);
     if (centre) entite.centre = centre;
     else anomalies.push(`${p.SU_A3} (${p.NAME_FR}) : centre introuvable, pas d'indice de distance`);
+
+    const trouvees = capitalesParPays.get(p.SU_A3);
+    if (trouvees && trouvees.length) {
+      const choix = choisirCapitale(p.SU_A3, trouvees, anomalies);
+      if (choix) {
+        const xy = projection(choix.principale.point);
+        if (xy && xy.every(estFini)) {
+          entite.capitale = {
+            fr: choix.principale.fr,
+            point: [arr(xy[0]), arr(xy[1])],
+            noms: [...new Set(choix.noms.flatMap((c) => [c.fr, c.en]))],
+          };
+        }
+      }
+    }
 
     if (silhouette) {
       entite.forme = [
@@ -369,6 +464,7 @@ function traiter(jeu, nomsOnu) {
   console.log(`  dimensions     ${LARGEUR} × ${hauteur}`);
   console.log(`  poids          ${ko} Ko`);
   if (jeu.marquerHorsOnu) console.log(`  hors ONU       ${horsOnu} (jouables dans le périmètre hors-onu)`);
+  if (jeu.capitales) console.log(`  capitales      ${entites.filter((e) => e.capitale).length}`);
   if (anomalies.length) {
     console.log(`  ANOMALIES      ${anomalies.length}`);
     anomalies.forEach((a) => console.log(`    - ${a}`));
