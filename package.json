@@ -4,9 +4,9 @@
   "description": "Jeu de géographie : reconnaître les pays du monde sur une carte.",
   "main": "index.js",
   "scripts": {
-    "donnees": "node build/telecharger.cjs && node build/generer.cjs && node build/alias.mjs && node build/generer-sw.cjs",
+    "donnees": "node build/telecharger.cjs && node build/generer.cjs && node build/drapeaux.cjs && node build/alias.mjs && node build/generer-sw.cjs",
     "sw": "node build/generer-sw.cjs",
-    "verifier": "node build/verifier-partie.mjs && node build/verifier-stockage.mjs && node build/verifier-saisie.mjs && node build/verifier-themes.mjs && node build/verifier-hors-ligne.mjs",
+    "verifier": "node build/verifier-partie.mjs && node build/verifier-stockage.mjs && node build/verifier-saisie.mjs && node build/verifier-drapeaux.mjs && node build/verifier-themes.mjs && node build/verifier-hors-ligne.mjs",
     "servir": "python3 -m http.server 8000"
   },
   "keywords": [],

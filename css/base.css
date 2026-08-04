@@ -1,6 +1,8 @@
 :root {
   --cible: 44px;
   --duree: 200ms;
+  --marge-drapeau: 1.5rem;
+  --trait-drapeau: 3px;
   --marge-haut: env(safe-area-inset-top, 0px);
   --marge-bas: env(safe-area-inset-bottom, 0px);
   --marge-gauche: env(safe-area-inset-left, 0px);
@@ -413,6 +415,7 @@ input::placeholder {
   position: relative;
   overflow: hidden;
   border-radius: var(--rayon);
+  background: var(--fond-carte);
   touch-action: none;
 }
 
@@ -502,6 +505,48 @@ input::placeholder {
 
 .silhouette.est-faux {
   fill: var(--faux);
+}
+
+/* Le drapeau occupe la place de la carte, entier et centré : sa taille ne
+   renseigne pas, seul son dessin compte. Le liseré le détache du fond, sans quoi
+   un drapeau à bord blanc ou sombre semblerait rogné. */
+.ecran #drapeau {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: var(--marge-drapeau);
+  object-fit: contain;
+  /* drop-shadow épouse les pixels de l'image, quand une bordure entourerait la
+     boîte : object-fit la laisse bien plus large que le drapeau. D'où le fond
+     porté par le conteneur — opaque ici, il rendrait toute la boîte pleine et
+     l'ombre se dessinerait autour d'elle, hors de l'écran. */
+  filter: drop-shadow(0 0 1px var(--contour)) drop-shadow(0 0 1px var(--contour));
+  transition: filter var(--duree) ease-out;
+}
+
+.ecran #drapeau[hidden] {
+  display: none;
+}
+
+.ecran #drapeau.est-juste {
+  filter: drop-shadow(0 0 var(--trait-drapeau) var(--juste))
+          drop-shadow(0 0 var(--trait-drapeau) var(--juste));
+}
+
+.ecran #drapeau.est-faux {
+  filter: drop-shadow(0 0 var(--trait-drapeau) var(--faux))
+          drop-shadow(0 0 var(--trait-drapeau) var(--faux));
+}
+
+.vignette-drapeau {
+  height: 0.85em;
+  width: auto;
+  margin-right: 0.4rem;
+  vertical-align: -0.1em;
+  border: 1px solid var(--bordure);
+  border-radius: 2px;
 }
 
 .pays.est-masque,

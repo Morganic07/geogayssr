@@ -6,7 +6,7 @@ Site statique, sans backend ni framework. Le jeu livré ne charge **aucune bibli
 travail géographique est payé une fois, à la fabrication des données, sur la machine de
 développement.
 
-## Quatre façons de jouer
+## Cinq façons de jouer
 
 - Mode 1 : Cliquer sur le pays 
 
@@ -16,12 +16,14 @@ développement.
 
 - Mode 4 : Deviner la capitale, le pays est montré et nommé, un point marque la ville
 
+- Mode 5 : Deviner le drapeau, le drapeau seul est montré, la réponse s'écrit
+
 
 ## Ce qu'on règle avant de jouer
 
 | Réglage | Choix |
 |---|---|
-| **Mode** | cliquer le pays · écrire son nom · deviner la forme · deviner la capitale |
+| **Mode** | cliquer le pays · écrire son nom · deviner la forme · deviner la capitale · deviner le drapeau |
 | **Carte** | les 197 de l'ONU · tous les territoires (296) · territoires extrêmes (358) · hors ONU seulement (169) |
 | **Zone** | le monde entier, ou un continent spécifique|
 | **Nombre de pays** | une valeur libre, ou tous |
@@ -78,13 +80,28 @@ La table `CAPITALES_MULTIPLES` de `build/generer.cjs` fixe donc la capitale mont
 également acceptées Pretoria avec Le Cap et Bloemfontein, Sucre avec La Paz, Amsterdam avec
 La Haye. C'est le seul endroit à modifier pour changer un arbitrage.
 
+**Deviner le drapeau.** Le drapeau seul remplit l'écran, la réponse s'écrit avec la même tolérance
+orthographique que le mode saisie. Les **197 pays de l'ONU** ont tous le leur ; sur les autres
+cartes, une entité n'est proposée que si un drapeau lui revient sans ambiguïté — 248 sur les
+territoires, 240 sur les extrêmes, dont **53 hors ONU** : Écosse, Alaska, Groenland, Åland.
+
+Un drapeau ne peut désigner qu'une entité et une seule, sans quoi la question n'aurait pas de
+réponse. C'est ce qui écarte les morceaux de pays auxquels la source prête le code du parent :
+Honshū, la Corse et le Brabant wallon partagent le code du Japon, de la France et de la Belgique,
+et seul le pays entier garde le drapeau. Les quatre nations britanniques font exception, leur
+drapeau existant à part. `build/generer.cjs` attribue, `build/verifier-drapeaux.mjs` refuse de
+laisser passer un drapeau ambigu ou une image manquante.
+
+Comme pour la forme, une réponse fausse mais reconnue donne la distance et la direction, puis un
+second essai. La liste des erreurs montre chaque drapeau en vignette devant le nom du pays.
+
 **Les erreurs sont rangées par mode**, sans exception : rater la position de la Bolivie, ne pas
-savoir écrire son nom, ne pas reconnaître sa forme et ignorer sa capitale sont quatre choses
-différentes, et la révision ne les mélange pas. La liste des erreurs de capitales affiche la
+savoir écrire son nom, ne pas reconnaître sa forme, ignorer sa capitale et ne pas reconnaître son
+drapeau sont cinq choses différentes, et la révision ne les mélange pas. La liste des erreurs de capitales affiche la
 réponse à côté du pays, « Bolivie — Sucre », ce qui en fait un aide-mémoire consultable.
 
-**Un indice au lieu d'un échec sec.** En mode « deviner la forme », une réponse fausse mais
-reconnue n'interrompt pas la question : elle affiche la distance et la direction qui séparent le
+**Un indice au lieu d'un échec sec.** En modes « deviner la forme » et « deviner le drapeau », une
+réponse fausse mais reconnue n'interrompt pas la question : elle affiche la distance et la direction qui séparent le
 pays proposé du bon, et laisse un second essai — « Non — Afghanistan : 12 500 km au nord-ouest.
 Encore un essai ». La bonne réponse n'est révélée qu'au second échec.
 
@@ -107,19 +124,19 @@ sous d'autres codes — l'Australie y est `AUZ`, l'Afrique du Sud `ZAX`. Les deu
 Russie, seules à porter un nom dérivé plutôt qu'identique, sont écartées à la main dans
 `build/generer.cjs`.
 
-**Jouable hors ligne, et installable.** Un service worker met les 2 Mo du jeu en cache à la
-première visite les quatre cartes, les noms, le code, les icônes. Ensuite tout fonctionne sans
+**Jouable hors ligne, et installable.** Un service worker met les 2,7 Mo du jeu en cache à la
+première visite les quatre cartes, les noms, les drapeaux, le code, les icônes. Ensuite tout fonctionne sans
 réseau, y compris en avion. Le manifeste permet d'ajouter le jeu à l'écran d'accueil : il se lance
 alors en plein écran, sans barre d'URL, dans l'orientation que l'on veut.
 
 
 **Mémoire des erreurs.** Les pays ratés sont conservés d'une partie à l'autre. « Voir mes erreurs »
-ouvre quatre sections repliables, une par mode, chacune avec son compte et sa propre révision ;
+ouvre cinq sections repliables, une par mode, chacune avec son compte et sa propre révision ;
 celle du mode choisi à l'accueil s'ouvre d'emblée, et un mode sans erreur reste affiché à zéro. La
 liste donne le nombre de fois pour les pays ratés plusieurs fois. Un pays deviné du premier coup
 pendant une révision sort de la liste de ce mode ; encore raté, il y reste.
 
-Les trois premières sections suivent la carte choisie à l'accueil. Celle des capitales porte
+Quatre sections sur cinq suivent la carte choisie à l'accueil. Celle des capitales porte
 toujours sur la carte de l'ONU, seule où le mode existe, et sa révision s'y place d'elle-même quelle
 que soit la carte affichée à côté.
 
@@ -186,6 +203,7 @@ js/
  stockage.js      Meilleurs scores et pays ratés dans localStorage.
  messages.js      Les textes de fin de partie, par palier de score.
  forme.js        Dessine une silhouette isolée, cadrée sur elle-même. Ne sait rien du jeu.
+ drapeau.js       Affiche un drapeau et son état. Ne sait rien du jeu.
  geo.js         Distance et direction entre deux points du globe. Aucune dépendance.
  maj.js         Enregistre le service worker et propose la mise à jour quand elle est prête.
  main.js        Le câblage : écrans, chargement des données, boucle de jeu.
@@ -194,11 +212,13 @@ data/          Généré, mais versionné voir plus bas.
  carte-units.json   296 territoires.
  carte-subunits.json  358 territoires, dont 169 marqués hors ONU.
  alias.json      906 formes acceptées à la saisie, pour 395 entités.
+ drapeaux.json     255 drapeaux en WebP sans perte, encodés dans un seul fichier.
 ```
 
-Aucun de ces fichiers n'a de dépendance. Le jeu tient en 67 Ko de code et 2 Mo de géométrie. En
-navigation ordinaire, une seule carte suffit à jouer les autres ne sont téléchargées que si on
-les choisit, et restent alors en mémoire pour la session. Le service worker, lui, prend tout
+Aucun de ces fichiers n'a de dépendance. Le jeu tient en 66 Ko de code, 2 Mo de géométrie et
+491 Ko de drapeaux. En navigation ordinaire, une seule carte suffit à jouer les autres ne sont
+téléchargées que si on les choisit, et restent alors en mémoire pour la session ; les drapeaux
+ne se chargent que si on ouvre leur mode. Le service worker, lui, prend tout
 d'un coup à la première visite, pour que les quatre cartes soient disponibles hors ligne.
 
 ### L'atelier jamais exécuté par le navigateur
@@ -210,6 +230,8 @@ build/
             ce dernier, mais rien n'en part sur le téléphone hors nom et position.
  generer.cjs      Projette la Terre, simplifie les frontières, corrige les noms français
             fautifs de la source, marque le hors-ONU, produit les data/carte-*.json.
+ drapeaux.cjs      Récupère les drapeaux des codes retenus par generer.cjs, les convertit
+            en WebP sans perte et les réunit dans data/drapeaux.json. Exige cwebp.
  alias.mjs       Produit data/alias.json, et refuse d'écrire en cas de collision.
  generer-sw.cjs    Réécrit la liste des ressources et l'empreinte de version dans sw.js.
  verifier-partie.mjs  22 contrôles sur le moteur de jeu : score, rattrapage, bornes, filtres.
@@ -218,6 +240,8 @@ build/
  verifier-saisie.mjs  Vérifie que tout nom officiel et tout alias résolvent, sur les quatre
             périmètres, qu'aucune paire piège ne se confond, et qu'aucun des 197
             pays de l'ONU n'est accepté dans le périmètre hors ONU.
+ verifier-drapeaux.mjs Refuse un drapeau annoncé sans image, une image qui n'est pas du WebP,
+            un drapeau désignant deux entités d'une même carte, ou une image morte.
  verifier-themes.mjs  Fait respecter le contrat entre base.css et les feuilles de thème.
  verifier-hors-ligne.mjs Refuse un sw.js périmé, un fichier livré absent du cache, ou un
             manifeste incohérent.
@@ -232,6 +256,14 @@ package-lock.json    Leurs versions exactes.
 
 
 ## Données
+
+Drapeaux : [flagcdn](https://flagcdn.com), domaine public, pris en 320 px de large. Le WebP sans
+perte est le format le plus léger des trois essayés — 375 Ko contre 460 en PNG et 590 en WebP avec
+perte, ce dernier étant le plus lourd parce qu'un drapeau est fait d'aplats où la compression avec
+perte sème du bruit. Les 255 images tiennent dans **un seul fichier** : le service worker met le
+jeu en cache par un `cache.addAll` qui échoue en bloc au moindre raté, et passer de 23 à 278
+requêtes à l'installation rendrait la mise en cache hors ligne fragile. Fabriquer ce fichier exige
+`cwebp` (paquet `webp`) sur la machine de développement ; le jeu livré, lui, ne dépend de rien.
 
 Frontières : [Natural Earth v5](https://github.com/nvkelso/natural-earth-vector), domaine public.
 La projection est une Natural Earth I calée sur une largeur de 2000 unités, les coordonnées sont

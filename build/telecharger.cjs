@@ -12,15 +12,17 @@ const JEUX = [
   'ne_10m_populated_places',
 ];
 
-function telecharger(nom) {
-  const cible = path.join(CACHE, nom + '.geojson');
+const CODES_DRAPEAUX = 'https://flagcdn.com/fr/codes.json';
+const CIBLE_CODES = path.join(CACHE, 'drapeaux-codes.json');
+
+function recuperer(url, cible, nom) {
   if (fs.existsSync(cible) && fs.statSync(cible).size > 0) {
     console.log(`  ${nom} : déjà en cache`);
     return Promise.resolve();
   }
   return new Promise((resolve, reject) => {
     const flux = fs.createWriteStream(cible);
-    https.get(`${BASE}/${nom}.geojson`, (rep) => {
+    https.get(url, (rep) => {
       if (rep.statusCode !== 200) {
         flux.close();
         fs.unlinkSync(cible);
@@ -29,8 +31,11 @@ function telecharger(nom) {
       rep.pipe(flux);
       flux.on('finish', () => {
         flux.close();
-        const mo = (fs.statSync(cible).size / 1048576).toFixed(1);
-        console.log(`  ${nom} : téléchargé (${mo} Mo)`);
+        const octets = fs.statSync(cible).size;
+        const taille = octets >= 1048576
+          ? `${(octets / 1048576).toFixed(1)} Mo`
+          : `${(octets / 1024).toFixed(0)} Ko`;
+        console.log(`  ${nom} : téléchargé (${taille})`);
         resolve();
       });
     }).on('error', (e) => {
@@ -41,10 +46,16 @@ function telecharger(nom) {
   });
 }
 
+function telecharger(nom) {
+  return recuperer(`${BASE}/${nom}.geojson`, path.join(CACHE, nom + '.geojson'), nom);
+}
+
 async function main() {
   fs.mkdirSync(CACHE, { recursive: true });
   console.log('Récupération des données Natural Earth :');
   for (const jeu of JEUX) await telecharger(jeu);
+  console.log('Liste des drapeaux disponibles :');
+  await recuperer(CODES_DRAPEAUX, CIBLE_CODES, 'drapeaux-codes');
   console.log('Terminé.');
 }
 

@@ -1,5 +1,6 @@
 import { creerCarte } from './carte.js';
 import { creerSilhouette } from './forme.js';
+import { creerAffichageDrapeau } from './drapeau.js';
 import { indiceEcart } from './geo.js';
 import { creerResolveur } from './saisie.js';
 import { creerPartie } from './partie.js';
@@ -46,14 +47,25 @@ const MODES = [
   { cle: 'saisie', libelle: 'Écrire son nom' },
   { cle: 'forme', libelle: 'Deviner la forme' },
   { cle: 'capitale', libelle: 'Deviner la capitale' },
+  { cle: 'drapeau', libelle: 'Deviner le drapeau' },
 ];
+
+// Les modes dont la réponse s'écrit, et ceux qui se passent de la carte du monde.
+const MODES_ECRITS = ['saisie', 'forme', 'capitale', 'drapeau'];
+const MODES_SANS_CARTE = ['forme', 'drapeau'];
+
+// Une réponse fausse mais reconnue vaut un indice et un second essai : le visuel
+// seul ne donne aucune prise, contrairement à la carte qui situe déjà le pays.
+const MODES_SECOND_ESSAI = ['forme', 'drapeau'];
 
 const fichiersCharges = new Map();
 const vuesPerimetre = new Map();
 let alias = null;
+let imagesDrapeaux = null;
 
 let carte = null;
 let silhouette = null;
+let drapeau = null;
 let vueCourante = null;
 let partie = null;
 const resolveurs = new Map();
@@ -91,6 +103,17 @@ async function chargerFichier(fichier) {
   return fichiersCharges.get(fichier);
 }
 
+async function chargerDrapeaux() {
+  if (imagesDrapeaux) return imagesDrapeaux;
+  const reponse = await fetch('data/drapeaux.json');
+  if (!reponse.ok) {
+    throw new Error(`Drapeaux introuvables (erreur ${reponse.status}). Recharge la page`);
+  }
+  const donnees = await reponse.json();
+  imagesDrapeaux = donnees.drapeaux || {};
+  return imagesDrapeaux;
+}
+
 async function chargerPerimetre(nom) {
   const definition = PERIMETRES[nom];
   if (!definition) throw new Error(`Carte inconnue « ${nom} ». Recharge la page`);
@@ -120,12 +143,20 @@ async function chargerPerimetre(nom) {
   return vue;
 }
 
+// Ce qu'un mode exige de l'entité en plus d'appartenir à la carte : une forme
+// reconnaissable, une capitale connue, un drapeau attribué sans ambiguïté.
+const REQUIS_PAR_MODE = {
+  forme: (e) => !!e.forme,
+  capitale: (e) => !!e.capitale,
+  drapeau: (e) => !!e.drapeau,
+};
+
 function estJouable(vue, id, mode) {
   if (vue.jouables ? !vue.jouables.has(id) : !vue.parId.has(id)) return false;
-  if (mode !== 'forme' && mode !== 'capitale') return true;
+  const requis = REQUIS_PAR_MODE[mode];
+  if (!requis) return true;
   const entite = vue.parId.get(id);
-  if (!entite) return false;
-  return mode === 'forme' ? !!entite.forme : !!entite.capitale;
+  return entite ? requis(entite) : false;
 }
 
 function formesDesCapitales(entites) {
@@ -140,9 +171,8 @@ function basculerSvg(element, visible) {
 }
 
 function entitesJouables(vue, mode) {
-  if (mode === 'forme') return vue.entites.filter((e) => e.forme);
-  if (mode === 'capitale') return vue.entites.filter((e) => e.capitale);
-  return vue.entites;
+  const requis = REQUIS_PAR_MODE[mode];
+  return requis ? vue.entites.filter(requis) : vue.entites;
 }
 
 function cleEchec(mode, id) {
@@ -272,6 +302,17 @@ function rafraichirBoutonErreurs() {
   );
 }
 
+function vignetteDrapeau(entite) {
+  const code = entite && entite.drapeau;
+  const image = code && imagesDrapeaux ? imagesDrapeaux[code] : null;
+  if (!image) return null;
+  const vignette = document.createElement('img');
+  vignette.className = 'vignette-drapeau';
+  vignette.src = `data:image/webp;base64,${image}`;
+  vignette.alt = '';
+  return vignette;
+}
+
 function remplirListeEntites(liste, ids, donnees, echecs, mode) {
   liste.textContent = '';
   for (const id of ids) {
@@ -280,6 +321,10 @@ function remplirListeEntites(liste, ids, donnees, echecs, mode) {
     item.textContent = entite ? entite.fr : id;
     if (mode === 'capitale' && entite && entite.capitale) {
       item.textContent += ` — ${entite.capitale.fr}`;
+    }
+    if (mode === 'drapeau') {
+      const vignette = vignetteDrapeau(entite);
+      if (vignette) item.prepend(vignette);
     }
     const rates = echecs ? echecs[cleEchec(mode, id)] : 0;
     if (rates > 1) {
@@ -364,6 +409,7 @@ async function afficherErreurs() {
   try {
     await chargerPerimetre(lireOptions().perimetre);
     await chargerPerimetre(PERIMETRE_CAPITALE);
+    if (entitesRateesPourMode('drapeau').length > 0) await chargerDrapeaux();
   } catch (e) {
     signalerErreur(e);
     return;
@@ -385,18 +431,28 @@ async function demarrerPartie(options, entitesImposees = null) {
 
   const estForme = options.mode === 'forme';
   const estCapitale = options.mode === 'capitale';
+  const estDrapeau = options.mode === 'drapeau';
+  const sansCarte = MODES_SANS_CARTE.includes(options.mode);
   const disponibles = entitesJouables(donnees, options.mode);
 
-  if (estForme) {
+  if (silhouette && !estForme) {
+    silhouette.detruire();
+    silhouette = null;
+  }
+  if (drapeau && !estDrapeau) {
+    drapeau.detruire();
+    drapeau = null;
+  }
+
+  if (sansCarte) {
     if (carte) carte.detruire();
     carte = null;
     perimetreCharge = null;
-    if (!silhouette) silhouette = creerSilhouette($('#silhouette'));
-  } else {
-    if (silhouette) {
-      silhouette.detruire();
-      silhouette = null;
+    if (estForme && !silhouette) silhouette = creerSilhouette($('#silhouette'));
+    if (estDrapeau && !drapeau) {
+      drapeau = creerAffichageDrapeau($('#drapeau'), await chargerDrapeaux());
     }
+  } else {
     if (perimetreCharge !== options.perimetre) {
       if (carte) carte.detruire();
       carte = creerCarte($('#carte'), donnees.fond, donnees.jouables);
@@ -407,8 +463,9 @@ async function demarrerPartie(options, entitesImposees = null) {
       carte.reinitialiserEtats();
     }
   }
-  basculerSvg($('#carte'), !estForme);
+  basculerSvg($('#carte'), !sansCarte);
   basculerSvg($('#silhouette'), estForme);
+  basculerSvg($('#drapeau'), estDrapeau);
 
   const zone = entitesImposees ? null : options.zone;
   if (carte) carte.filtrerContinent(zone);
@@ -418,9 +475,9 @@ async function demarrerPartie(options, entitesImposees = null) {
     : disponibles;
 
   if (entites.length === 0) {
-    throw new Error(estForme
-      ? 'aucune forme reconnaissable dans cette sélection'
-      : 'aucun pays à réviser dans ce périmètre');
+    if (estForme) throw new Error('aucune forme reconnaissable dans cette sélection');
+    if (estDrapeau) throw new Error('aucun drapeau attribuable dans cette sélection');
+    throw new Error('aucun pays à réviser dans ce périmètre');
   }
 
   partie = creerPartie({
@@ -438,7 +495,7 @@ async function demarrerPartie(options, entitesImposees = null) {
     cle: entitesImposees ? `revision|${options.mode}|${options.perimetre}` : cleScore(options),
   };
 
-  const parEcrit = options.mode === 'saisie' || estForme || estCapitale;
+  const parEcrit = MODES_ECRITS.includes(options.mode);
   const cleResolveur = estCapitale ? `capitales:${donnees.fichier}` : donnees.fichier;
   if (parEcrit && !resolveurs.has(cleResolveur)) {
     resolveurs.set(cleResolveur, estCapitale
@@ -478,6 +535,9 @@ function poserQuestion() {
   if (partie.mode === 'forme') {
     $('#consigne').textContent = 'Quel est ce territoire ?';
     silhouette.dessiner(vueCourante.parId.get(question.id));
+  } else if (partie.mode === 'drapeau') {
+    $('#consigne').textContent = 'De quel pays est ce drapeau ?';
+    drapeau.dessiner(vueCourante.parId.get(question.id));
   } else if (partie.mode === 'capitale') {
     const entite = vueCourante.parId.get(question.id);
     $('#consigne').textContent = `Quelle est la capitale de ${question.fr} ?`;
@@ -500,7 +560,7 @@ function surClicCarte(id) {
 
 function validerSaisie() {
   if (!partie || enAttente) return;
-  if (!['saisie', 'forme', 'capitale'].includes(partie.mode)) return;
+  if (!MODES_ECRITS.includes(partie.mode)) return;
   const texte = $('#champ-reponse').value.trim();
   if (!texte) return;
   if (!resolveurCourant) return;
@@ -538,7 +598,7 @@ function traiterReponse(idPropose) {
   const question = partie.questionCourante();
   if (!question) return;
 
-  if (partie.mode === 'forme' && !secondEssai && idPropose !== question.id) {
+  if (MODES_SECOND_ESSAI.includes(partie.mode) && !secondEssai && idPropose !== question.id) {
     offrirSecondEssai(question, idPropose);
     return;
   }
@@ -549,6 +609,7 @@ function traiterReponse(idPropose) {
 
   const marquer = (etat) => {
     if (partie.mode === 'forme') silhouette.definirEtat(etat);
+    else if (partie.mode === 'drapeau') drapeau.definirEtat(etat);
     else carte.definirEtat(question.id, etat);
   };
 
@@ -700,7 +761,7 @@ function ouvrirParametres() {
 function fermerParametres() {
   if ($('#panneau-parametres').hidden) return;
   $('#panneau-parametres').hidden = true;
-  if (partie && partie.mode === 'saisie' && !enAttente) $('#champ-reponse').focus();
+  if (partie && MODES_ECRITS.includes(partie.mode) && !enAttente) $('#champ-reponse').focus();
   else $('#bouton-parametres').focus();
 }
 

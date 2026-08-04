@@ -1,4 +1,4 @@
-const VERSION = '6f356a56ac12';
+const VERSION = '187704530298';
 const CACHE = `geogayssr-${VERSION}`;
 
 const RESSOURCES = [
@@ -10,11 +10,13 @@ const RESSOURCES = [
   'data/carte-onu.json',
   'data/carte-subunits.json',
   'data/carte-units.json',
+  'data/drapeaux.json',
   'icones/icone-180.png',
   'icones/icone-192.png',
   'icones/icone-512.png',
   'index.html',
   'js/carte.js',
+  'js/drapeau.js',
   'js/forme.js',
   'js/geo.js',
   'js/main.js',

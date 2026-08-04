@@ -62,6 +62,18 @@ const SILHOUETTE_MORCEAU_SEUL = new Set(['USA', 'NOR']);
 
 const FICHIER_VILLES = 'ne_10m_populated_places';
 
+const FICHIER_CODES_DRAPEAUX = 'drapeaux-codes.json';
+
+// Les quatre nations britanniques ne portent aucun code ISO propre : Natural Earth
+// leur donne celui du Royaume-Uni, qui appartient déjà à l'entité « Royaume-Uni ».
+// Leur drapeau existe pourtant chez la source, sous un code de subdivision.
+const DRAPEAUX_NOMMES = {
+  SCT: 'gb-sct',
+  WLS: 'gb-wls',
+  ENG: 'gb-eng',
+  NIR: 'gb-nir',
+};
+
 const CAPITALES_MULTIPLES = {
   ZAF: { principale: 'Pretoria', aussi: ['Le Cap', 'Bloemfontein'] },
   BEN: { principale: 'Porto-Novo', aussi: ['Cotonou'] },
@@ -83,6 +95,74 @@ const CAPITALES_MULTIPLES = {
 
 function codesPossibles(p) {
   return [p.ADM0_A3, p.ISO_A3_EH, p.ISO_A3, p.SU_A3].filter((c) => c && c !== '-99');
+}
+
+function chargerCodesDrapeaux() {
+  const chemin = path.join(CACHE, FICHIER_CODES_DRAPEAUX);
+  if (!fs.existsSync(chemin)) {
+    console.error(`\n${FICHIER_CODES_DRAPEAUX} absent du cache : lance « npm run donnees » pour le récupérer`);
+    process.exit(1);
+  }
+  return new Set(Object.keys(JSON.parse(fs.readFileSync(chemin, 'utf8'))));
+}
+
+// Le nom que portera l'entité dans le jeu, seul à pouvoir servir de réponse :
+// la source nomme « Russie » la moitié asiatique, et « Seychelles » les Terres
+// australes françaises.
+function nomFinal(p) {
+  const correction = CORRECTIONS[p.SU_A3];
+  return (correction && correction.fr) || p.NAME_FR || p.NAME;
+}
+
+// Le code ISO propre à l'entité passe avant celui du parent : « US-AK » désigne
+// le drapeau de l'Alaska, quand ISO_A2_EH la rattacherait aux États-Unis.
+function codeDrapeau(p, disponibles) {
+  return [p.ISO_A2, p.ISO_A2_EH]
+    .map((c) => (c && c !== '-99' ? c.toLowerCase() : null))
+    .find((c) => c && disponibles.has(c)) || null;
+}
+
+// Un drapeau ne vaut réponse que s'il désigne une entité et une seule. Trois voies,
+// de la plus sûre à la plus faible : l'entité porte le nom d'un pays de l'ONU, elle
+// détient un code ISO que nulle autre ne revendique, ou elle figure en exception.
+function attribuerDrapeaux(features, disponibles, drapeauxOnu, anomalies) {
+  const occurrences = new Map();
+  for (const f of features) {
+    const code = codeDrapeau(f.properties, disponibles);
+    if (code) occurrences.set(code, (occurrences.get(code) || 0) + 1);
+  }
+
+  const attribue = new Map();
+  const pris = new Map();
+
+  const voies = [
+    (p) => (drapeauxOnu ? drapeauxOnu.get(nomFinal(p)) : null),
+    (p) => {
+      const code = codeDrapeau(p, disponibles);
+      return code && occurrences.get(code) === 1 ? code : null;
+    },
+    (p) => {
+      const code = DRAPEAUX_NOMMES[p.SU_A3];
+      return code && disponibles.has(code) ? code : null;
+    },
+  ];
+
+  for (const choisir of voies) {
+    for (const f of features) {
+      const p = f.properties;
+      if (attribue.has(p.SU_A3)) continue;
+      const code = choisir(p);
+      if (!code) continue;
+      const rival = pris.get(code);
+      if (rival) {
+        anomalies.push(`${p.SU_A3} : drapeau « ${code} » déjà pris par ${rival}, entité écartée du mode`);
+        continue;
+      }
+      pris.set(code, p.SU_A3);
+      attribue.set(p.SU_A3, code);
+    }
+  }
+  return attribue;
 }
 
 function continentJouable(p) {
@@ -297,7 +377,7 @@ function choisirCapitale(id, trouvees, anomalies) {
   return { principale, noms };
 }
 
-function traiter(jeu, nomsOnu) {
+function traiter(jeu, nomsOnu, drapeauxOnu) {
   const brut = JSON.parse(
     fs.readFileSync(path.join(CACHE, jeu.fichier + '.geojson'), 'utf8')
   );
@@ -334,6 +414,7 @@ function traiter(jeu, nomsOnu) {
 
   const entites = [];
   const anomalies = [];
+  const drapeaux = attribuerDrapeaux(retenues, codesDrapeaux, drapeauxOnu, anomalies);
   let minuscules = 0;
   let basDuPlan = 0;
 
@@ -383,6 +464,9 @@ function traiter(jeu, nomsOnu) {
       pastille: aireTotale < SEUIL_PASTILLE || !d,
       zone: [arr(bornes[0][0]), arr(bornes[0][1]), arr(bornes[1][0]), arr(bornes[1][1])],
     };
+
+    const drapeau = drapeaux.get(p.SU_A3);
+    if (drapeau) entite.drapeau = drapeau;
 
     const centre = centreSpherique(source.geometry);
     if (centre) entite.centre = centre;
@@ -465,6 +549,8 @@ function traiter(jeu, nomsOnu) {
   console.log(`  poids          ${ko} Ko`);
   if (jeu.marquerHorsOnu) console.log(`  hors ONU       ${horsOnu} (jouables dans le périmètre hors-onu)`);
   if (jeu.capitales) console.log(`  capitales      ${entites.filter((e) => e.capitale).length}`);
+  console.log(`  drapeaux       ${entites.filter((e) => e.drapeau).length}`);
+  console.log(`  formes         ${entites.filter((e) => e.forme).length}`);
   if (anomalies.length) {
     console.log(`  ANOMALIES      ${anomalies.length}`);
     anomalies.forEach((a) => console.log(`    - ${a}`));
@@ -474,9 +560,14 @@ function traiter(jeu, nomsOnu) {
 }
 
 fs.mkdirSync(SORTIE, { recursive: true });
+const codesDrapeaux = chargerCodesDrapeaux();
 let nomsOnu = null;
+let drapeauxOnu = null;
 for (const jeu of JEUX) {
-  const entites = traiter(jeu, nomsOnu);
-  if (jeu.nom === 'onu') nomsOnu = new Set(entites.map((e) => e.fr));
+  const entites = traiter(jeu, nomsOnu, drapeauxOnu);
+  if (jeu.nom === 'onu') {
+    nomsOnu = new Set(entites.map((e) => e.fr));
+    drapeauxOnu = new Map(entites.filter((e) => e.drapeau).map((e) => [e.fr, e.drapeau]));
+  }
 }
 console.log('\nTerminé.');
